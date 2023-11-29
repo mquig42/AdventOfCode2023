@@ -1,0 +1,33 @@
+﻿@page "/Day00"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 0</PageTitle>
+
+<h2>Day Zero</h2>
+
+<textarea cols="80" rows="25" @bind="inpInput" />
+<br />
+<button @onclick="Run">Run</button>
+
+<hr />
+<h3>Part 1 output:</h3>
+<p>@firstLine</p>
+
+<hr />
+<h3>Notes</h3>
+<p>This is a basic test page I made to prepare for the real puzzles. It displays the first line of the input.</p>
+
+@code
+{
+    string firstLine = "";
+    string inpInput = "";
+
+    void Run()
+    {
+        string[] lines = inpInput.Split("\n");
+        if (lines.Length > 0)
+            firstLine = lines[0];
+        else
+            firstLine = "";
+    }
+}
