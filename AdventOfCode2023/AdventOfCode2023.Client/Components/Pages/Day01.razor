@@ -1,0 +1,108 @@
+﻿@page "/Day01"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 1</PageTitle>
+
+<h2>Day 1</h2>
+
+<textarea cols="80" rows="25" @bind="inpInput" />
+<br />
+
+
+<hr />
+<h3>Part 1:</h3>
+<button @onclick="Run1">Run</button>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<button @onclick="Run2">Run</button>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+<p>This was pretty hard for a day 1 problem. My first attempt at part 2 was basically <code>line.Replace("one", "1").Replace("two", "2")...</code> which failed on the second test case. <code>eightwothree</code> should evaluate to 83, but "eight" and "two" overlap and my replace chain found the two first. I switched to an approach that worked from left to right rather than one to nine. That worked on all the test cases that were provided, but still ran into problems with other overlapping strings. <code>sevenine</code>, for example. That was hard to find but easy to fix. I just changed my left-to-right iteration through the line to always advance by one character instead of skipping over the rest of any spelled-out digits it found.</p>
+<p>This probably would have been easier if I'd just used regular expressions from the start.</p>
+
+@code
+{
+    int output1 = 0;
+    int output2 = 0;
+    string inpInput = "";
+    string errText = "";
+
+    void Run1()
+    {
+        string[] lines = inpInput.Split("\n");
+        int sum = 0;
+
+        foreach(string line in lines)
+        {
+            sum += CalibrationValue(line);
+        }
+
+        output1 = sum;
+    }
+
+    void Run2()
+    {
+        string[] lines = inpInput.Split("\n");
+        int sum = 0;
+        errText = "";
+
+        foreach (string line in lines)
+        {
+            sum += CalibrationValue2(line, 0, 0);
+        }
+
+        output2 = sum;
+    }
+
+    int CalibrationValue(string line)
+    {
+        if (String.IsNullOrEmpty(line))
+            return 0;
+
+        int firstDigit = -1;
+        int lastDigit = 0;
+        foreach(char c in line)
+        {
+            if(c >= '0' && c <= '9')
+            {
+                if (firstDigit == -1)
+                    firstDigit = c - '0';
+                lastDigit = c - '0';
+            }
+        }
+
+        return firstDigit * 10 + lastDigit;
+    }
+
+    int CalibrationValue2(string line, int firstDigit, int lastDigit)
+    {
+        if (line == "")
+            return firstDigit * 10 + lastDigit;
+        else if (line[0] >= '0' && line[0] <= '9')
+            return CalibrationValue2(line.Substring(1), firstDigit == 0 ? line[0] - '0' : firstDigit, line[0] - '0');
+        else if (line.StartsWith("one"))
+            return CalibrationValue2(line.Substring(1), firstDigit == 0 ? 1 : firstDigit, 1);
+        else if (line.StartsWith("two"))
+            return CalibrationValue2(line.Substring(1), firstDigit == 0 ? 2 : firstDigit, 2);
+        else if (line.StartsWith("three"))
+            return CalibrationValue2(line.Substring(1), firstDigit == 0 ? 3 : firstDigit, 3);
+        else if (line.StartsWith("four"))
+            return CalibrationValue2(line.Substring(1), firstDigit == 0 ? 4 : firstDigit, 4);
+        else if (line.StartsWith("five"))
+            return CalibrationValue2(line.Substring(1), firstDigit == 0 ? 5 : firstDigit, 5);
+        else if (line.StartsWith("six"))
+            return CalibrationValue2(line.Substring(1), firstDigit == 0 ? 6 : firstDigit, 6);
+        else if (line.StartsWith("seven"))
+            return CalibrationValue2(line.Substring(1), firstDigit == 0 ? 7 : firstDigit, 7);
+        else if (line.StartsWith("eight"))
+            return CalibrationValue2(line.Substring(1), firstDigit == 0 ? 8 : firstDigit, 8);
+        else if (line.StartsWith("nine"))
+            return CalibrationValue2(line.Substring(1), firstDigit == 0 ? 9 : firstDigit, 9);
+        else
+            return CalibrationValue2(line.Substring(1), firstDigit, lastDigit);
+    }
+}
