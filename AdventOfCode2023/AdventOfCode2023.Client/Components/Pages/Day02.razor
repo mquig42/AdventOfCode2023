@@ -19,7 +19,7 @@
 
 <hr />
 <h3>Notes</h3>
-<p>This is a basic test page I made to prepare for the real puzzles. It displays the first line of the input.</p>
+<p>Parsing the input was by far the most difficult part of this.</p>
 
 @code
 {
@@ -51,7 +51,15 @@
 
     void Run2()
     {
+        int sum = 0;
+        List<List<int[]>> games = ParseAllGames();
 
+        foreach(List<int[]> game in games)
+        {
+            sum += Power(game);
+        }
+
+        output2 = string.Format("{0}", sum);
     }
 
     int[] ParseSet(string set)
@@ -127,5 +135,23 @@
         }
 
         return true;
+    }
+
+    //Calculation for part 2
+    //Find the minimum number of cubes required to make the game possible, then multiply them together
+    int Power(List<int[]> game)
+    {
+        int red = 0;
+        int green = 0;
+        int blue = 0;
+
+        foreach(int[] set in game)
+        {
+            red = int.Max(red, set[0]);
+            green = int.Max(green, set[1]);
+            blue = int.Max(blue, set[2]);
+        }
+
+        return red * green * blue;
     }
 }
