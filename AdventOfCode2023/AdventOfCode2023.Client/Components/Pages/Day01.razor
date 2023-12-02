@@ -6,8 +6,6 @@
 <h2>Day 1</h2>
 
 <textarea cols="80" rows="25" @bind="inpInput" />
-<br />
-
 
 <hr />
 <h3>Part 1:</h3>
@@ -29,7 +27,6 @@
     int output1 = 0;
     int output2 = 0;
     string inpInput = "";
-    string errText = "";
 
     void Run1()
     {
@@ -48,7 +45,6 @@
     {
         string[] lines = inpInput.Split("\n");
         int sum = 0;
-        errText = "";
 
         foreach (string line in lines)
         {

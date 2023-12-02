@@ -1,0 +1,131 @@
+﻿@page "/Day02"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 2</PageTitle>
+
+<h2>Day 2</h2>
+
+<textarea cols="80" rows="25" @bind="inpInput" />
+
+<hr />
+<h3>Part 1:</h3>
+<button @onclick="Run1">Run</button>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<button @onclick="Run2">Run</button>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+<p>This is a basic test page I made to prepare for the real puzzles. It displays the first line of the input.</p>
+
+@code
+{
+    string output1 = "";
+    string output2 = "";
+    string inpInput = "";
+
+    //Cubes are always red, blue, or green.
+    //Each game (one line of input) consists of several sets of cubes that are revealed and then put back
+    //So, to represent a game, I'll need a list of sets. A set could be an array of 3 integers for red, green, and blue cubes
+    //The colours in each set are listed in random order, so the parser will need to deal with that
+
+    //Example game:
+    //Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
+
+    void Run1()
+    {
+        int sum = 0;
+        List<List<int[]>> games = ParseAllGames();
+
+        for (int i = 0; i < games.Count; i++)
+        {
+            if (IsValid1(games[i]))
+                sum = sum + i + 1;
+        }
+
+        output1 = string.Format("{0}", sum);
+    }
+
+    void Run2()
+    {
+
+    }
+
+    int[] ParseSet(string set)
+    {
+        int[] cubes = new int[3];
+        int count;
+        string colour;
+
+        foreach(string s in set.Split(","))
+        {
+            count = int.Parse(s.Trim().Split(" ")[0]);
+            colour = s.Trim().Split(" ")[1];
+
+            if (colour == "red")
+                cubes[0] = count;
+            else if (colour == "green")
+                cubes[1] = count;
+            else
+                cubes[2] = count;
+        }
+
+        return cubes;
+    }
+
+    List<int[]> ParseGame(string game)
+    {
+        List<int[]> sets = new List<int[]>();
+
+        foreach(string s in game.Substring(game.IndexOf(":") + 1).Split(";"))
+        {
+            sets.Add(ParseSet(s));
+        }
+
+        return sets;
+    }
+
+    List<List<int[]>> ParseAllGames()
+    {
+        List<List<int[]>> games = new List<List<int[]>>();
+
+        foreach(string line in inpInput.Split("\n"))
+        {
+            if(!string.IsNullOrEmpty(line))
+            {
+                games.Add(ParseGame(line));
+            }
+        }
+
+        return games;
+    }
+
+    string GameToString(List<int[]> game)
+    {
+        string output = "";
+
+        foreach(int[] set in game)
+        {
+            output = output + String.Format("{0} {1} {2}; ", set[0], set[1], set[2]);
+        }
+
+        return output;
+    }
+
+    //Validation function for part 1
+    //There are 12 red, 13 green, and 14 blue cubes.
+    //Return true if all sets contain fewer than that, false if any have more
+    bool IsValid1(List<int[]> game)
+    {
+        foreach(int[] set in game)
+        {
+            if (set[0] > 12 || set[1] > 13 || set[2] > 14)
+                return false;
+        }
+
+        return true;
+    }
+}
