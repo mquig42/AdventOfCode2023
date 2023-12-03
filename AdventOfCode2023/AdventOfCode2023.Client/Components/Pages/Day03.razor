@@ -5,7 +5,7 @@
 
 <h2>Day 3</h2>
 
-<textarea cols="80" rows="25" @bind="inpInput" />
+<textarea cols="140" rows="25" @bind="inpInput" />
 
 <hr />
 <h3>Part 1:</h3>
@@ -19,7 +19,9 @@
 
 <hr />
 <h3>Notes</h3>
-<p>Notes</p>
+<p>Multiply two numbers to get the ratio? Elves must have their own unique way of designing gearboxes. The diagram certainly looks unusual.</p>
+<p>The first puzzle of the year where the input represents a grid. Since I don't need to do anything complicated with it, like maze pathfinding, I'm just representing it as an array of strings. Finding the solution was straightforward, except for deduplicating the part numbers.</p>
+<p>A symbol might be adjacent to more than one digit of the same number, and we don't want to count it twice. My first approach was to store all part numbers in a HashSet, but it turns out that the same part number might appear multiple times in the input. Fortunately, at least in my input, there are never two identical numbers next to the same part. HashSets still work, I just had to modify my approach a little.</p>
 
 @code
 {
@@ -32,7 +34,7 @@
         //Access this like so: lines[row][col]
         string[] lines = inpInput.Trim().Split("\n");
 
-        List<int> allPartNumbers = new List<int>();
+        int sum = 0;
 
         for(int row=0; row < lines.Length; row++)
         {
@@ -40,45 +42,36 @@
             {
                 if(!char.IsDigit(lines[row][col]) && lines[row][col] != '.')
                 {
-                    //Symbol found. Check all 8 neighbouring coords for numbers.
-
-                    HashSet<int> partNumbers = new HashSet<int>();
-                    if (char.IsDigit(GetChar(lines, row - 1, col - 1)))
-                        partNumbers.Add(GetNumber(lines, row - 1, col - 1));
-                    if (char.IsDigit(GetChar(lines, row - 1, col)))
-                        partNumbers.Add(GetNumber(lines, row - 1, col));
-                    if (char.IsDigit(GetChar(lines, row - 1, col + 1)))
-                        partNumbers.Add(GetNumber(lines, row - 1, col + 1));
-                    if (char.IsDigit(GetChar(lines, row, col - 1)))
-                        partNumbers.Add(GetNumber(lines, row, col - 1));
-                    if (char.IsDigit(GetChar(lines, row, col + 1)))
-                        partNumbers.Add(GetNumber(lines, row, col + 1));
-                    if (char.IsDigit(GetChar(lines, row + 1, col - 1)))
-                        partNumbers.Add(GetNumber(lines, row + 1, col - 1));
-                    if (char.IsDigit(GetChar(lines, row + 1, col)))
-                        partNumbers.Add(GetNumber(lines, row + 1, col));
-                    if (char.IsDigit(GetChar(lines, row + 1, col + 1)))
-                        partNumbers.Add(GetNumber(lines, row + 1, col + 1));
-
-                    //Part numbers aren't unique, but duplicates don't occur next to the same symbol (at least in my input)
-                    //Use a HashSet here to deduplicate, because a symbol could neighbour several digits of the same number.
-                    //Copy into a List of allPartNumbers, because that must allow duplicates.
-                    foreach (int p in partNumbers)
-                        allPartNumbers.Add(p);
+                    foreach (int n in GetNeighbouringNumbers(lines, row, col))
+                        sum += n;
                 }
             }
         }
-
-        int sum = 0;
-        foreach (int i in allPartNumbers)
-            sum += i;
 
         output1 = sum;
     }
 
     void Run2()
     {
+        string[] lines = inpInput.Trim().Split("\n");
+        int sum = 0;
 
+        for (int row = 0; row < lines.Length; row++)
+        {
+            for (int col = 0; col < lines[0].Length; col++)
+            {
+                if (lines[row][col] == '*')
+                {
+                    HashSet<int> partNumbers = GetNeighbouringNumbers(lines, row, col);
+                    if (partNumbers.Count == 2)
+                    {
+                        sum += partNumbers.ElementAt(0) * partNumbers.ElementAt(1);
+                    }
+                }
+            }
+        }
+
+        output2 = sum;
     }
 
     //Retrieves a single character from the grid, or '.' if the given coords are out of bounds
@@ -107,5 +100,29 @@
             start++;
 
         return int.Parse(lines[row].Substring(start, end - start));
+    }
+
+    //Gets a HashSet of all distinct numbers adjacent to the given coords
+    HashSet<int> GetNeighbouringNumbers(string[] lines, int row, int col)
+    {
+        HashSet<int> partNumbers = new HashSet<int>();
+        if (char.IsDigit(GetChar(lines, row - 1, col - 1)))
+            partNumbers.Add(GetNumber(lines, row - 1, col - 1));
+        if (char.IsDigit(GetChar(lines, row - 1, col)))
+            partNumbers.Add(GetNumber(lines, row - 1, col));
+        if (char.IsDigit(GetChar(lines, row - 1, col + 1)))
+            partNumbers.Add(GetNumber(lines, row - 1, col + 1));
+        if (char.IsDigit(GetChar(lines, row, col - 1)))
+            partNumbers.Add(GetNumber(lines, row, col - 1));
+        if (char.IsDigit(GetChar(lines, row, col + 1)))
+            partNumbers.Add(GetNumber(lines, row, col + 1));
+        if (char.IsDigit(GetChar(lines, row + 1, col - 1)))
+            partNumbers.Add(GetNumber(lines, row + 1, col - 1));
+        if (char.IsDigit(GetChar(lines, row + 1, col)))
+            partNumbers.Add(GetNumber(lines, row + 1, col));
+        if (char.IsDigit(GetChar(lines, row + 1, col + 1)))
+            partNumbers.Add(GetNumber(lines, row + 1, col + 1));
+
+        return partNumbers;
     }
 }
