@@ -1,0 +1,78 @@
+﻿@page "/Day04"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 4</PageTitle>
+
+<h2>Day 4</h2>
+
+<textarea cols="80" rows="25" @bind="puzzleInput" />
+
+<hr />
+<h3>Part 1:</h3>
+<button @onclick="Run1">Run</button>
+<p>@output1</p>
+<p>@debugText</p>
+
+<hr />
+<h3>Part 2:</h3>
+<button @onclick="Run2">Run</button>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+
+@code
+{
+    int output1 = 0;
+    int output2 = 0;
+    string puzzleInput = "";
+    string debugText = "";
+
+    void Run1()
+    {
+        string[] lines = puzzleInput.Trim().Split("\n");
+        int sum = 0;
+
+        foreach(string line in lines)
+        {
+            sum += ScoreLine(line);
+        }
+
+        output1 = sum;
+    }
+
+    void Run2()
+    {
+    }
+
+    int ScoreLine(string line)
+    {
+        HashSet<int> winningNumbers = new HashSet<int>();
+        HashSet<int> cardNumbers = new HashSet<int>();
+        HashSet<int> workingSet = winningNumbers;
+
+        foreach(string s in line.Split(":")[1].Trim().Split())
+        {
+            if (s == "|")
+                workingSet = cardNumbers;
+            else if (string.IsNullOrWhiteSpace(s))
+                continue;
+            else
+                workingSet.Add(int.Parse(s));
+        }
+
+        int matches = winningNumbers.Intersect(cardNumbers).Count();
+        if (matches == 0)
+            return 0;
+
+        //Calculate score. It's 2 ^ (matches - 1)
+        int score = 1;
+        while(matches > 1)
+        {
+            score *= 2;
+            matches -= 1;
+        }
+
+        return score;
+    }
+}
