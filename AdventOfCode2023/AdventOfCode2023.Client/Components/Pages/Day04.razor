@@ -5,13 +5,12 @@
 
 <h2>Day 4</h2>
 
-<textarea cols="80" rows="25" @bind="puzzleInput" />
+<textarea cols="117" rows="25" @bind="puzzleInput" />
 
 <hr />
 <h3>Part 1:</h3>
 <button @onclick="Run1">Run</button>
 <p>@output1</p>
-<p>@debugText</p>
 
 <hr />
 <h3>Part 2:</h3>
@@ -20,13 +19,16 @@
 
 <hr />
 <h3>Notes</h3>
+<p>A strange game. No actual prizes, just more scratch cards.</p>
+<p>Recursion + memoization seems like the best way to solve part 2.</p>
 
 @code
 {
     int output1 = 0;
     int output2 = 0;
     string puzzleInput = "";
-    string debugText = "";
+
+    Dictionary<int, int> count2Memo = new Dictionary<int, int>();
 
     void Run1()
     {
@@ -43,25 +45,19 @@
 
     void Run2()
     {
+        string[] lines = puzzleInput.Trim().Split("\n");
+        int sum = 0;
+
+        for (int i = 0; i < lines.Count(); i++)
+            sum += count2(lines, i);
+
+        output2 = sum + lines.Count();
     }
 
-    int ScoreLine(string line)
+    //Finds the score of a card for part 1
+    int ScoreLine(string card)
     {
-        HashSet<int> winningNumbers = new HashSet<int>();
-        HashSet<int> cardNumbers = new HashSet<int>();
-        HashSet<int> workingSet = winningNumbers;
-
-        foreach(string s in line.Split(":")[1].Trim().Split())
-        {
-            if (s == "|")
-                workingSet = cardNumbers;
-            else if (string.IsNullOrWhiteSpace(s))
-                continue;
-            else
-                workingSet.Add(int.Parse(s));
-        }
-
-        int matches = winningNumbers.Intersect(cardNumbers).Count();
+        int matches = CountMatches(card);
         if (matches == 0)
             return 0;
 
@@ -74,5 +70,45 @@
         }
 
         return score;
+    }
+
+    //Counts the matching numbers on a card
+    int CountMatches(string card)
+    {
+        HashSet<int> winningNumbers = new HashSet<int>();
+        HashSet<int> cardNumbers = new HashSet<int>();
+        HashSet<int> workingSet = winningNumbers;
+
+        foreach (string s in card.Split(":")[1].Trim().Split())
+        {
+            if (s == "|")
+                workingSet = cardNumbers;
+            else if (string.IsNullOrWhiteSpace(s))
+                continue;
+            else
+                workingSet.Add(int.Parse(s));
+        }
+
+        return winningNumbers.Intersect(cardNumbers).Count();
+    }
+
+    //Counts the number of additional cards won by a card for part 2
+    //Does not include the original
+    int count2(string[] cards, int cardNo)
+    {
+        if (count2Memo.ContainsKey(cardNo))
+            return count2Memo[cardNo];
+
+        int matches = CountMatches(cards[cardNo]);
+        int sum = matches;
+
+        while(matches>0)
+        {
+            sum += count2(cards, cardNo + matches);
+            matches--;
+        }
+
+        count2Memo[cardNo] = sum;
+        return sum;
     }
 }
