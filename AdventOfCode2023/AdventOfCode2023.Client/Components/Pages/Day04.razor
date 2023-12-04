@@ -54,6 +54,9 @@
         string[] lines = puzzleInput.Trim().Split("\n");
         int sum = 0;
 
+        //Reset memoization, in case the input has changed
+        count2Memo.Clear();
+
         for (int i = 0; i < lines.Count(); i++)
             sum += count2(lines, i);
 
