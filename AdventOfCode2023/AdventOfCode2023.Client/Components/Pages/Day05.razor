@@ -1,0 +1,151 @@
+﻿@page "/Day05"
+@rendermode InteractiveWebAssembly
+
+@* <style>
+    body {
+        background-image: url(/media/confetti.gif);
+    }
+</style> *@
+
+<PageTitle>Day 5</PageTitle>
+
+<h2>Day 5</h2>
+
+<textarea cols="80" rows="25" @bind="puzzleInput" />
+
+<hr />
+<h3>Part 1:</h3>
+<button @onclick="Run1">Run</button>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<button @onclick="Run2">Run</button>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+
+@code
+{
+    long output1 = 0;
+    long output2 = 0;
+    string puzzleInput = "";
+
+    IEnumerable<long> seeds = new List<long>();
+    List<long[]> seedSoil = new List<long[]>();
+    List<long[]> soilFertilizer = new List<long[]>();
+    List<long[]> fertilizerWater = new List<long[]>();
+    List<long[]> waterLight = new List<long[]>();
+    List<long[]> lightTemperature = new List<long[]>();
+    List<long[]> temperatureHumidity = new List<long[]>();
+    List<long[]> humidityLocation = new List<long[]>();
+
+    void ParseInput()
+    {
+        //No trim this time, we need an empty line at the end
+        string[] lines = puzzleInput.Split("\n");
+
+        seeds = lines[0].Substring(lines[0].IndexOf(":") + 2).Split().Select(x => long.Parse(x));
+
+        //Start at 2. First line is seeds, second is blank
+        int lineNo = 2;
+        lineNo = ParseMap(lines, lineNo, seedSoil);
+        lineNo = ParseMap(lines, lineNo, soilFertilizer);
+        lineNo = ParseMap(lines, lineNo, fertilizerWater);
+        lineNo = ParseMap(lines, lineNo, waterLight);
+        lineNo = ParseMap(lines, lineNo, lightTemperature);
+        lineNo = ParseMap(lines, lineNo, temperatureHumidity);
+        lineNo = ParseMap(lines, lineNo, humidityLocation);
+    }
+
+    /// <summary>
+    /// Reads a map section from the puzzle input
+    /// </summary>
+    /// <param name="lines">Puzzle input as an array of strings, one per line</param>
+    /// <param name="start">Starting line number of map section</param>
+    /// <param name="map">Destination map</param>
+    /// <returns>Starting line number of the next map section in puzzle input</returns>
+    int ParseMap(string[] lines, int start, List<long[]> map)
+    {
+        int i;
+        for(i = start + 1; lines[i] != ""; i++)
+        {
+            long[] mapLine = new long[3];
+            mapLine[0] = long.Parse(lines[i].Split()[0]);
+            mapLine[1] = long.Parse(lines[i].Split()[1]);
+            mapLine[2] = long.Parse(lines[i].Split()[2]);
+            map.Add(mapLine);
+        }
+
+        return i + 1;
+    }
+
+    //Finds the corresponding destination value for source, as defined by map
+    //The map is an array of three numbers.
+    //0: destination
+    //1. source
+    //2. length
+    long ApplyMap(long source, List<long[]> map)
+    {
+        foreach(long[] mapRange in map)
+        {
+            if (source >= mapRange[1] && source - mapRange[1] <= mapRange[2])
+                return mapRange[0] + (source - mapRange[1]);
+        }
+        return source;
+    }
+
+    //Applies all mappings. When given a seed number, returns location
+    long ApplyAllMaps(long source)
+    {
+        return ApplyMap(ApplyMap(ApplyMap(ApplyMap(ApplyMap(ApplyMap(ApplyMap(source, seedSoil), soilFertilizer), fertilizerWater), waterLight), lightTemperature), temperatureHumidity), humidityLocation);
+    }
+
+    //The reverse of ApplyMap. Converts a destination into a source
+    long ReverseMap(long dest, List<long[]> map)
+    {
+        foreach(long[] mapRange in map)
+        {
+            if (dest >= mapRange[0] && dest - mapRange[0] <= mapRange[2])
+                return mapRange[1] + (dest - mapRange[0]);
+        }
+        return dest;
+    }
+
+    //When given a location, return a seed
+    long ReverseAllMaps(long dest)
+    {
+        return ReverseMap(ReverseMap(ReverseMap(ReverseMap(ReverseMap(ReverseMap(ReverseMap(dest, humidityLocation), temperatureHumidity), lightTemperature), waterLight), fertilizerWater), soilFertilizer), seedSoil);
+    }
+
+    bool IsValidSeed(long seed)
+    {
+        for (int i = 0; i < seeds.Count(); i += 2)
+        {
+            if (seed >= seeds.ElementAt(i) && seed - seeds.ElementAt(i) <= seeds.ElementAt(i + 1))
+                return true;
+        }
+        return false;
+    }
+
+    void Run1()
+    {
+        ParseInput();
+        output1 = seeds.Select(x => ApplyAllMaps(x)).Min();
+    }
+
+    void Run2()
+    {
+        ParseInput();
+
+        for(long i=0;i<long.MaxValue;i++)
+        {
+            if (IsValidSeed(ReverseAllMaps(i)))
+            {
+                output2 = i;
+                break;
+            }
+        }
+    }
+}
