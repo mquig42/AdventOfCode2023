@@ -25,11 +25,12 @@
 
 <hr />
 <h3>Notes</h3>
+<p>My first solution for part 2, running all the mappings backwards so I could test if a location number corresponded to a seed, was too slow. When I ran it as a console app, it completed in 13 minutes and found the correct answer. WebAssembly doesn't seem to like functions that take 13 minutes to run, though.</p>
 
 @code
 {
     long output1 = 0;
-    long output2 = 0;
+    string output2 = "";
     string puzzleInput = "";
 
     IEnumerable<long> seeds = new List<long>();
@@ -102,31 +103,28 @@
         return ApplyMap(ApplyMap(ApplyMap(ApplyMap(ApplyMap(ApplyMap(ApplyMap(source, seedSoil), soilFertilizer), fertilizerWater), waterLight), lightTemperature), temperatureHumidity), humidityLocation);
     }
 
-    //The reverse of ApplyMap. Converts a destination into a source
-    long ReverseMap(long dest, List<long[]> map)
+    //Applies a map to an entire range of values. Returns a list of destination ranges
+    //This list will always have an even number of elements, and alternates between start and end
+    List<long> MapRange(long start, long end, List<long[]> map)
     {
-        foreach(long[] mapRange in map)
-        {
-            if (dest >= mapRange[0] && dest - mapRange[0] <= mapRange[2])
-                return mapRange[1] + (dest - mapRange[0]);
-        }
-        return dest;
-    }
+        List<long> ranges = new List<long>();
+        long overlapStart, overlapEnd;
 
-    //When given a location, return a seed
-    long ReverseAllMaps(long dest)
-    {
-        return ReverseMap(ReverseMap(ReverseMap(ReverseMap(ReverseMap(ReverseMap(ReverseMap(dest, humidityLocation), temperatureHumidity), lightTemperature), waterLight), fertilizerWater), soilFertilizer), seedSoil);
-    }
-
-    bool IsValidSeed(long seed)
-    {
-        for (int i = 0; i < seeds.Count(); i += 2)
+        foreach(long[] range in map)
         {
-            if (seed >= seeds.ElementAt(i) && seed - seeds.ElementAt(i) <= seeds.ElementAt(i + 1))
-                return true;
+            overlapStart = long.Max(start, range[1]);
+            overlapEnd = long.Min(end, range[1] + range[2]);
+            if(overlapStart < overlapEnd)
+            {
+                ranges.Add(overlapStart - range[1] + range[0]);
+                ranges.Add(overlapEnd - range[1] + range[0]);
+            }
         }
-        return false;
+
+        //Need to account for unmapped ranges. Any source values not part of a map range map to themselves.
+        //There may end up being several of these depending on how the ranges of the map are arranged.
+
+        return ranges;
     }
 
     void Run1()
@@ -137,15 +135,9 @@
 
     void Run2()
     {
-        ParseInput();
+        //ParseInput();
 
-        for(long i=0;i<long.MaxValue;i++)
-        {
-            if (IsValidSeed(ReverseAllMaps(i)))
-            {
-                output2 = i;
-                break;
-            }
-        }
+        //MapRange(79, 79 + 14, seedSoil);
+        output2 = "Not implemented.";
     }
 }
