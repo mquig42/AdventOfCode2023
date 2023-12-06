@@ -1,0 +1,95 @@
+﻿@page "/Day06"
+@rendermode InteractiveWebAssembly
+@using System.Text.RegularExpressions;
+
+@* <style>
+    body {
+        background-image: url(/media/confetti.gif);
+    }
+</style> *@
+
+<PageTitle>Day 6</PageTitle>
+
+<h2>Day 6</h2>
+
+<textarea cols="80" rows="25" @bind="puzzleInput" />
+
+<hr />
+<h3>Part 1:</h3>
+<button @onclick="Run1">Run</button>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<button @onclick="Run2">Run</button>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+<p>Easy one this time. In fact, part 2 was simpler than part 1, since I don't need to loop through multiple races. Will probably return to replace my initial brute-force solution with something more efficient, and possibly even simpler.</p>
+
+@code
+{
+    int output1 = 0;
+    long output2 = 0;
+    string puzzleInput = "";
+
+    //Calculate distance travelled by a boat
+    int RaceBoat(int chargeTime, int timeLimit)
+    {
+        return chargeTime * (timeLimit - chargeTime);
+    }
+
+    void Run1()
+    {
+        string[] lines = puzzleInput.Split("\n");
+        MatchCollection timesMatches = Regex.Matches(lines[0], @"\d+");
+        MatchCollection recordsMatches = Regex.Matches(lines[1], @"\d+");
+        int[] times = new int[timesMatches.Count];
+        int[] records = new int[recordsMatches.Count];
+
+        for (int i = 0; i < timesMatches.Count; i++)
+        {
+            times[i] = int.Parse(timesMatches[i].Value);
+            records[i] = int.Parse(recordsMatches[i].Value);
+        }
+
+        int[] wins = new int[timesMatches.Count];
+        for(int i=0;i<timesMatches.Count;i++)
+        {
+            wins[i] = 0;
+            for(int j=0;j<times[i];j++)
+            {
+                if(RaceBoat(j, times[i]) > records[i])
+                {
+                    wins[i]++;
+                }
+            }
+        }
+
+        int sum = 1;
+        for(int i=0;i<timesMatches.Count;i++)
+        {
+            sum *= wins[i];
+        }
+
+        output1 = sum;
+    }
+
+    void Run2()
+    {
+        string[] lines = puzzleInput.Split("\n");
+
+        long time = long.Parse(lines[0].Replace(" ", "").Split(":")[1]);
+        long dist = long.Parse(lines[1].Replace(" ", "").Split(":")[1]);
+
+        long sum = 0;
+        for(long i=0;i<time;i++)
+        {
+            if (i * (time - i) > dist)
+                sum++;
+        }
+
+        output2 = sum;
+    }
+}
