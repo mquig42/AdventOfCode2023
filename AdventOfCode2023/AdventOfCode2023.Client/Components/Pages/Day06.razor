@@ -2,11 +2,11 @@
 @rendermode InteractiveWebAssembly
 @using System.Text.RegularExpressions;
 
-@* <style>
+<style>
     body {
-        background-image: url(/media/confetti.gif);
+        background-image: url(/media/background-water1.jpg);
     }
-</style> *@
+</style>
 
 <PageTitle>Day 6</PageTitle>
 
@@ -15,12 +15,18 @@
 <textarea cols="80" rows="25" @bind="puzzleInput" />
 
 <hr />
-<h3>Part 1:</h3>
+<div>
+    <h3>Part 1:</h3>
+    <img src="/media/boat.gif" style="float:left" />
+</div>
 <button @onclick="Run1">Run</button>
 <p>@output1</p>
 
 <hr />
-<h3>Part 2:</h3>
+<div>
+    <h3>Part 2:</h3>
+    <img src="/media/boat.gif" style="float:left" />
+</div>
 <button @onclick="Run2">Run</button>
 <p>@output2</p>
 
