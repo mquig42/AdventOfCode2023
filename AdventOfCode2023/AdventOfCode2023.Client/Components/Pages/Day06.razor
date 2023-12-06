@@ -27,17 +27,29 @@
 <hr />
 <h3>Notes</h3>
 <p>Easy one this time. In fact, part 2 was simpler than part 1, since I don't need to loop through multiple races. Will probably return to replace my initial brute-force solution with something more efficient, and possibly even simpler.</p>
+<p>Update: I did come back and write a constant-time solution, and it ended up being 16 lines shorter.</p>
 
 @code
 {
-    int output1 = 0;
+    long output1 = 0;
     long output2 = 0;
     string puzzleInput = "";
 
-    //Calculate distance travelled by a boat
-    int RaceBoat(int chargeTime, int timeLimit)
+    long CountWins(long time, long record)
     {
-        return chargeTime * (timeLimit - chargeTime);
+        //Boat distance is a quadratic equation. Use quadratic formula to solve it. In this case, a is always 1 and can be ignored.
+        double a = (time + Math.Sqrt(time * time - 4 * record)) / 2;
+        double b = (time - Math.Sqrt(time * time - 4 * record)) / 2;
+
+        //We need to beat the record, not just match it. Use integerOffset to discard any integer solutions we find
+        int integerOffset = 0;
+        if (a == Math.Floor(a))
+            integerOffset++;
+        if (b == Math.Floor(b))
+            integerOffset++;
+
+        //Return difference between a and b, accounting for integer offsets
+        return (long)(Math.Floor(double.Max(a, b)) - Math.Ceiling(double.Min(a, b))) + 1 - integerOffset;
     }
 
     void Run1()
@@ -45,35 +57,14 @@
         string[] lines = puzzleInput.Split("\n");
         MatchCollection timesMatches = Regex.Matches(lines[0], @"\d+");
         MatchCollection recordsMatches = Regex.Matches(lines[1], @"\d+");
-        int[] times = new int[timesMatches.Count];
-        int[] records = new int[recordsMatches.Count];
 
+        long product = 1;
         for (int i = 0; i < timesMatches.Count; i++)
         {
-            times[i] = int.Parse(timesMatches[i].Value);
-            records[i] = int.Parse(recordsMatches[i].Value);
+            product *= CountWins(long.Parse(timesMatches[i].Value), long.Parse(recordsMatches[i].Value));
         }
 
-        int[] wins = new int[timesMatches.Count];
-        for(int i=0;i<timesMatches.Count;i++)
-        {
-            wins[i] = 0;
-            for(int j=0;j<times[i];j++)
-            {
-                if(RaceBoat(j, times[i]) > records[i])
-                {
-                    wins[i]++;
-                }
-            }
-        }
-
-        int sum = 1;
-        for(int i=0;i<timesMatches.Count;i++)
-        {
-            sum *= wins[i];
-        }
-
-        output1 = sum;
+        output1 = product;
     }
 
     void Run2()
@@ -83,13 +74,6 @@
         long time = long.Parse(lines[0].Replace(" ", "").Split(":")[1]);
         long dist = long.Parse(lines[1].Replace(" ", "").Split(":")[1]);
 
-        long sum = 0;
-        for(long i=0;i<time;i++)
-        {
-            if (i * (time - i) > dist)
-                sum++;
-        }
-
-        output2 = sum;
+        output2 = CountWins(time, dist);
     }
 }
