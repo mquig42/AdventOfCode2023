@@ -2,11 +2,11 @@
 @rendermode InteractiveWebAssembly
 @using System.Text.RegularExpressions;
 
-@* <style>
+<style>
     body {
-        background-image: url(/media/background-water1.jpg);
+        background-image: url(/media/background-desert-sand.jpg);
     }
-</style> *@
+</style>
 
 <PageTitle>Day 7</PageTitle>
 
@@ -14,17 +14,17 @@
 
 <textarea cols="80" rows="25" @bind="puzzleInput" />
 
-<hr />
+<div style="background-image:url(/media/divider-cards-suits.gif); background-repeat:repeat-x; height:50px"></div>
 <h3>Part 1:</h3>
 <button @onclick="Run1">Run</button>
 <p>@output1</p>
 
-<hr />
+<div style="background-image:url(/media/divider-cards-suits.gif); background-repeat:repeat-x; height:50px"></div>
 <h3>Part 2:</h3>
 <button @onclick="Run2">Run</button>
 <p>@output2</p>
 
-<hr />
+<div style="background-image:url(/media/divider-cards-suits.gif); background-repeat:repeat-x; height:50px"></div>
 <h3>Notes</h3>
 <p>Another nice puzzle. The main part of it is sorting a list with a custom comparison function. Everything apart from that is straightforward.</p>
 <p>Oddly, in both the example and my input, winnings were lower in part 2. I guess the wildcards don't help.</p>
