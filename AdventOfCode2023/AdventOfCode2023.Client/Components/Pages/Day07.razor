@@ -1,0 +1,137 @@
+﻿@page "/Day07"
+@rendermode InteractiveWebAssembly
+@using System.Text.RegularExpressions;
+
+@* <style>
+    body {
+        background-image: url(/media/background-water1.jpg);
+    }
+</style> *@
+
+<PageTitle>Day 7</PageTitle>
+
+<h2>Day 7</h2>
+
+<textarea cols="80" rows="25" @bind="puzzleInput" />
+
+<hr />
+<h3>Part 1:</h3>
+<button @onclick="Run1">Run</button>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<button @onclick="Run2">Run</button>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+
+
+@code
+{
+    int output1 = 0;
+    int output2 = 0;
+    string puzzleInput = "";
+
+    void Run1()
+    {
+        List<Hand> hands = puzzleInput.Trim().Split("\n").Select(x => new Hand(x)).ToList();
+
+        hands.Sort();
+
+        int sum = 0;
+        for (int i = 0; i < hands.Count; i++)
+        {
+            sum += hands[i].Bid * (i + 1);
+        }
+
+        output1 = sum;
+    }
+
+    void Run2()
+    {
+        //No idea what this will be. Probably the rules of Camel Poker are more complicated than part 1 says.
+        //Update: Jokers are now wild. Need a new comparison function.
+    }
+
+    private class Hand : IComparable
+    {
+        private string cards;
+        private int bid;
+
+        public int Bid
+        {
+            get { return this.bid; }
+        }
+
+        public Hand(string inputLine)
+        {
+            cards = inputLine.Split()[0];
+            bid = int.Parse(inputLine.Split()[1]);
+        }
+
+        /// <summary>
+        /// Returns an integer representing the type of this hand
+        /// </summary>
+        /// <returns>6. Five of a kind
+        ///          5. Four of a kind
+        ///          4. Full House
+        ///          3. Three of a kind
+        ///          2. Two pair
+        ///          1. One pair
+        ///          0. High card</returns>
+        public int HandType()
+        {
+            Dictionary<char, int> counts = new Dictionary<char, int>();
+            foreach(char c in cards)
+            {
+                counts[c] = counts.GetValueOrDefault(c) + 1;
+            }
+
+            if (counts.Values.Count == 1)
+                return 6;
+            else if (counts.Values.Count == 2 && counts.Values.Contains(4))
+                return 5;
+            else if (counts.Values.Count == 2)
+                return 4;
+            else if (counts.Values.Count == 3 && counts.Values.Contains(3))
+                return 3;
+            else if (counts.Values.Count == 3)
+                return 2;
+            else if (counts.Values.Count == 4)
+                return 1;
+            else
+                return 0;
+        }
+
+        //CompareTo function required to implement IComparable and sort a List of Hand objects
+        public int CompareTo(object? obj)
+        {
+            if (obj == null) return 1;
+
+            Hand otherHand = (obj as Hand)!;
+
+            int thisType = this.HandType();
+            int otherType = otherHand.HandType();
+
+            if (thisType > otherType)
+                return 1;
+            else if (thisType < otherType)
+                return -1;
+            else
+            {
+                //individual card values in order. Use IndexOf to compare cards.
+                char[] cardOrder = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
+
+                for(int i=0; i<5; i++)
+                {
+                    if(cards[i] != otherHand.cards[i])
+                        return Array.IndexOf(cardOrder, cards[i]).CompareTo(Array.IndexOf(cardOrder, otherHand.cards[i]));
+                }
+            }
+
+            return 0;
+        }
+    }
+}
