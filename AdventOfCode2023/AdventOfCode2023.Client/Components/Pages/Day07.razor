@@ -26,7 +26,8 @@
 
 <hr />
 <h3>Notes</h3>
-
+<p>Another nice puzzle. The main part of it is sorting a list with a custom comparison function. Everything apart from that is straightforward.</p>
+<p>Oddly, in both the example and my input, winnings were lower in part 2. I guess the wildcards don't help.</p>
 
 @code
 {
@@ -51,14 +52,24 @@
 
     void Run2()
     {
-        //No idea what this will be. Probably the rules of Camel Poker are more complicated than part 1 says.
-        //Update: Jokers are now wild. Need a new comparison function.
+        List<JokerHand> hands = puzzleInput.Trim().Split("\n").Select(x => new JokerHand(x)).ToList();
+
+        hands.Sort();
+
+        int sum = 0;
+        for (int i = 0; i < hands.Count; i++)
+        {
+            sum += hands[i].Bid * (i + 1);
+        }
+
+        output2 = sum;
     }
 
     private class Hand : IComparable
     {
-        private string cards;
-        private int bid;
+        protected string cards;
+        protected int bid;
+        protected char[] cardOrder;
 
         public int Bid
         {
@@ -69,6 +80,7 @@
         {
             cards = inputLine.Split()[0];
             bid = int.Parse(inputLine.Split()[1]);
+            cardOrder = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
         }
 
         /// <summary>
@@ -81,7 +93,7 @@
         ///          2. Two pair
         ///          1. One pair
         ///          0. High card</returns>
-        public int HandType()
+        public virtual int HandType()
         {
             Dictionary<char, int> counts = new Dictionary<char, int>();
             foreach(char c in cards)
@@ -121,9 +133,6 @@
                 return -1;
             else
             {
-                //individual card values in order. Use IndexOf to compare cards.
-                char[] cardOrder = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
-
                 for(int i=0; i<5; i++)
                 {
                     if(cards[i] != otherHand.cards[i])
@@ -132,6 +141,57 @@
             }
 
             return 0;
+        }
+    }
+
+    private class JokerHand : Hand
+    {
+        public JokerHand(string inputLine) : base(inputLine)
+        {
+            cardOrder = ['J', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'Q', 'K', 'A'];
+        }
+
+        /// <summary>
+        /// Returns an integer representing the type of this hand
+        /// </summary>
+        /// <returns>6. Five of a kind
+        ///          5. Four of a kind
+        ///          4. Full House
+        ///          3. Three of a kind
+        ///          2. Two pair
+        ///          1. One pair
+        ///          0. High card</returns>
+        public override int HandType()
+        {
+            Dictionary<char, int> counts = new Dictionary<char, int>();
+            char highestNonJoker = ' ';
+            foreach (char c in cards)
+            {
+                counts[c] = counts.GetValueOrDefault(c) + 1;
+                if(c != 'J' && counts[c] > counts.GetValueOrDefault(highestNonJoker))
+                    highestNonJoker = c;
+            }
+
+            if(counts.ContainsKey('J') && counts.Count > 1)
+            {
+                counts[highestNonJoker] += counts['J'];
+                counts.Remove('J');
+            }
+
+            if (counts.Values.Count == 1)
+                return 6;
+            else if (counts.Values.Count == 2 && counts.Values.Contains(4))
+                return 5;
+            else if (counts.Values.Count == 2)
+                return 4;
+            else if (counts.Values.Count == 3 && counts.Values.Contains(3))
+                return 3;
+            else if (counts.Values.Count == 3)
+                return 2;
+            else if (counts.Values.Count == 4)
+                return 1;
+            else
+                return 0;
         }
     }
 }
