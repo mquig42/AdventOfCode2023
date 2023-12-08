@@ -1,0 +1,66 @@
+﻿@page "/Day08"
+@rendermode InteractiveWebAssembly
+@using System.Text.RegularExpressions
+
+<PageTitle>Day 8</PageTitle>
+
+<h3>Day 8</h3>
+
+<textarea cols="80" rows="25" @bind="puzzleInput" />
+
+<hr />
+<h3>Part 1:</h3>
+<button @onclick="Run1">Run</button>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<button @onclick="Run2">Run</button>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+
+@code
+{
+    int output1 = 0;
+    int output2 = 0;
+    string puzzleInput = "";
+
+    void Run1()
+    {
+        //Parse input
+        string[] lines = puzzleInput.Trim().Split("\n");
+        string directions = lines[0];
+        Dictionary<string, string[]> nodes = new Dictionary<string, string[]>();
+
+        for (int i = 2; i < lines.Count(); i++)
+        {
+            MatchCollection mc = Regex.Matches(lines[i], @"[A-Z]{3}");
+            nodes[mc.ElementAt(0).Value] = [mc.ElementAt(1).Value, mc.ElementAt(2).Value];
+        }
+
+        //Follow instructions
+        int steps = 0;
+        int d = 0;
+        string loc = "AAA";
+
+        while(loc != "ZZZ")
+        {
+            if (directions[d] == 'L')
+                loc = nodes[loc][0];
+            else
+                loc = nodes[loc][1];
+
+            steps++;
+            d = (d + 1) % directions.Length;
+        }
+
+        output1 = steps;
+    }
+
+    void Run2()
+    {
+
+    }
+}
