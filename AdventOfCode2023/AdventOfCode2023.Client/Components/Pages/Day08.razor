@@ -7,15 +7,14 @@
 <h3>Day 8</h3>
 
 <textarea cols="80" rows="25" @bind="puzzleInput" />
+<button @onclick="Run">Run</button>
 
 <hr />
 <h3>Part 1:</h3>
-<button @onclick="Run1">Run</button>
 <p>@output1</p>
 
 <hr />
 <h3>Part 2:</h3>
-<button @onclick="Run2">Run</button>
 <p>@output2</p>
 
 <hr />
@@ -27,12 +26,15 @@
     int output2 = 0;
     string puzzleInput = "";
 
-    void Run1()
+    string directions = "";
+    Dictionary<string, string[]> nodes = new Dictionary<string, string[]>();
+
+    void Run()
     {
         //Parse input
         string[] lines = puzzleInput.Trim().Split("\n");
-        string directions = lines[0];
-        Dictionary<string, string[]> nodes = new Dictionary<string, string[]>();
+        directions = lines[0];
+        nodes.Clear();
 
         for (int i = 2; i < lines.Count(); i++)
         {
@@ -40,7 +42,12 @@
             nodes[mc.ElementAt(0).Value] = [mc.ElementAt(1).Value, mc.ElementAt(2).Value];
         }
 
-        //Follow instructions
+        Run1();
+        Run2();
+    }
+
+    void Run1()
+    {
         int steps = 0;
         int d = 0;
         string loc = "AAA";
@@ -59,8 +66,43 @@
         output1 = steps;
     }
 
+    //This works for the sample, but runs too long for the real input (such a simple approach would be too easy, wouldn't it?)
+    //The number of simultaneous nodes is small, so it should run fast enough. (tested. 100,000 steps only takes a couple of seconds)
+    //I can only assume that the number of steps before they all line up is absolutely huge.
+    //This could be similar to the bus station problem from 2020.
     void Run2()
     {
+        int steps = 0;
+        int d = 0;
+        string[] locs = nodes.Keys.Where(x => x.EndsWith('A')).ToArray();
+        bool done = false;
 
+        while(!done)
+        {
+            done = true;
+            if(directions[d] == 'L')
+            {
+                for (int i = 0; i < locs.Length; i++)
+                {
+                    locs[i] = nodes[locs[i]][0];
+                    if (!locs[i].EndsWith('Z'))
+                        done = false;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < locs.Length; i++)
+                {
+                    locs[i] = nodes[locs[i]][1];
+                    if (!locs[i].EndsWith('Z'))
+                        done = false;
+                }
+            }
+
+            steps++;
+            d = (d + 1) % directions.Length;
+        }
+
+        output2 = steps;
     }
 }
