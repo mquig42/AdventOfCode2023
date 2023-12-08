@@ -19,11 +19,13 @@
 
 <hr />
 <h3>Notes</h3>
+<p>This reminds me of the bus station puzzle from 2020. Least common multiple is a recurring topic in Advent of Code.</p>
+<p>After solving part 1 and investing the patterns that come up in the data for part 2, I originally got the solution from Wolfram Alpha. Afterwards, I wrote my own LCM calculation.</p>
 
 @code
 {
-    int output1 = 0;
-    int output2 = 0;
+    long output1 = 0;
+    long output2 = 0;
     string puzzleInput = "";
 
     string directions = "";
@@ -42,17 +44,20 @@
             nodes[mc.ElementAt(0).Value] = [mc.ElementAt(1).Value, mc.ElementAt(2).Value];
         }
 
-        Run1();
-        Run2();
+        output1 = StepsToDest("AAA");
+        //This LINQ maps StepsToDest over every node that ends with A. The puzzle answer is the least common multiple of those values.
+        output2 = LCM(nodes.Keys.Where(x => x.EndsWith('A')).Select(x => StepsToDest(x)));
     }
 
-    void Run1()
+    //Find number of steps from given start node to any node that ends with Z
+    long StepsToDest(string start)
     {
-        int steps = 0;
+        long steps = 0;
         int d = 0;
-        string loc = "AAA";
+        string loc = start;
 
-        while(loc != "ZZZ")
+        //This works for part 1 as well, since the only node it passes through that ends with Z is ZZZ
+        while (!loc.EndsWith('Z'))
         {
             if (directions[d] == 'L')
                 loc = nodes[loc][0];
@@ -63,46 +68,53 @@
             d = (d + 1) % directions.Length;
         }
 
-        output1 = steps;
+        return steps;
     }
 
-    //This works for the sample, but runs too long for the real input (such a simple approach would be too easy, wouldn't it?)
-    //The number of simultaneous nodes is small, so it should run fast enough. (tested. 100,000 steps only takes a couple of seconds)
-    //I can only assume that the number of steps before they all line up is absolutely huge.
-    //This could be similar to the bus station problem from 2020.
-    void Run2()
+    //Least common multiple function based on Euclid's algorithm for greatest common divisors. The Aggregate function in C# is similar to foldl in Racket
+    long LCM(IEnumerable<long> factors)
     {
-        int steps = 0;
-        int d = 0;
-        string[] locs = nodes.Keys.Where(x => x.EndsWith('A')).ToArray();
-        bool done = false;
+        return factors.Aggregate((a, b) => a * (b / GCD(a, b)));
+    }
 
-        while(!done)
+    //Euclid's algorithm
+    long GCD(long a, long b)
+    {
+        long t;
+
+        while (b != 0)
         {
-            done = true;
-            if(directions[d] == 'L')
-            {
-                for (int i = 0; i < locs.Length; i++)
-                {
-                    locs[i] = nodes[locs[i]][0];
-                    if (!locs[i].EndsWith('Z'))
-                        done = false;
-                }
-            }
+            t = b;
+            b = a % b;
+            a = t;
+        }
+
+        return a;
+    }
+
+    //Not used in final program. Something I wrote to explore the data
+    //Keep following instructions until you've reached a Z node 5 times, and generate a list of step counts for each time
+    //Wanted to see if it was periodic, and it was.
+    List<long> Try()
+    {
+        List<long> stepsLst = new List<long>();
+        long steps = 0;
+        int d = 0;
+        string loc = nodes.Keys.Where(x => x.EndsWith('A')).ToArray()[0];
+
+        while (stepsLst.Count < 5)
+        {
+            if (directions[d] == 'L')
+                loc = nodes[loc][0];
             else
-            {
-                for (int i = 0; i < locs.Length; i++)
-                {
-                    locs[i] = nodes[locs[i]][1];
-                    if (!locs[i].EndsWith('Z'))
-                        done = false;
-                }
-            }
+                loc = nodes[loc][1];
 
             steps++;
             d = (d + 1) % directions.Length;
+            if (loc.EndsWith('Z'))
+                stepsLst.Add(steps);
         }
 
-        output2 = steps;
+        return stepsLst;
     }
 }
