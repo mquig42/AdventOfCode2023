@@ -1,0 +1,107 @@
+﻿@page "/Day09"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 9</PageTitle>
+
+@* <style>
+    body {
+        background-image: url(/media/tree-running.gif);
+        color: #003366;
+    }
+</style> *@
+
+<h3>Day 9</h3>
+
+<div style="display:table-cell">
+    <textarea cols="80" rows="25" @bind="puzzleInput" />
+    <div align="right"><button @onclick="Run">Run</button></div>
+</div>
+
+<hr />
+<h3>Part 1:</h3>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+
+@code
+{
+    int output1 = 0;
+    int output2 = 0;
+    string puzzleInput = "";
+
+    void Run()
+    {
+        //How have I been ignoring this feature? I can do all my input parsing on one line.
+        List<List<int>> sequences = puzzleInput.Trim().Split("\n").Select(x => x.Split().Select(y => int.Parse(y)).ToList()).ToList();
+        output1 = sequences.Select(x => Extrapolate(x)).Aggregate((a, b) => a + b);
+        output2 = sequences.Select(x => ExtrapolateBack(x)).Aggregate((a, b) => a + b);
+    }
+
+    int Extrapolate(List<int> sequence)
+    {
+        List<List<int>> differences = new List<List<int>>();
+        differences.Add(sequence);
+        bool AllZero = false;
+
+        while (!AllZero)
+        {
+            AllZero = true;
+            List<int> d = new List<int>();
+
+            for (int i = 1; i < differences.Last().Count; i++)
+            {
+                d.Add(differences.Last()[i] - differences.Last()[i - 1]);
+                if (d.Last() != 0)
+                    AllZero = false;
+            }
+
+            differences.Add(d);
+        }
+
+        //Is this extra 0 actually required?
+        differences.Last().Add(0);
+
+        for (int i = differences.Count - 2; i >= 0; i--)
+        {
+            differences[i].Add(differences[i].Last() + differences[i + 1].Last());
+        }
+
+        return differences[0].Last();
+    }
+
+    int ExtrapolateBack(List<int> sequence)
+    {
+        List<List<int>> differences = new List<List<int>>();
+        differences.Add(sequence);
+        bool AllZero = false;
+
+        while (!AllZero)
+        {
+            AllZero = true;
+            List<int> d = new List<int>();
+
+            for (int i = 1; i < differences.Last().Count; i++)
+            {
+                d.Add(differences.Last()[i] - differences.Last()[i - 1]);
+                if (d.Last() != 0)
+                    AllZero = false;
+            }
+
+            differences.Add(d);
+        }
+
+        //Everything above this point is the same as Extrapolate. Refactor it.
+
+        for (int i = differences.Count - 2; i >= 0; i--)
+        {
+            differences[i].Insert(0, differences[i][0] - differences[i + 1][0]);
+        }
+
+        return differences[0][0];
+    }
+}
