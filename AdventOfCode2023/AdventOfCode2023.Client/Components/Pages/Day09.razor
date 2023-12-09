@@ -3,12 +3,12 @@
 
 <PageTitle>Day 9</PageTitle>
 
-@* <style>
+<style>
     body {
-        background-image: url(/media/tree-running.gif);
-        color: #003366;
+        background-image: url(/media/green-trees.png);
+        color: white;
     }
-</style> *@
+</style>
 
 <h3>Day 9</h3>
 
@@ -27,6 +27,7 @@
 
 <hr />
 <h3>Notes</h3>
+<p>Part 2 caught me by surprise. I was expecting to extrapolate a billion years into the future, and instead it was just part 1 but backwards. Overall a straightforward puzzle in C#, though it may have been trickier if I was using Racket.</p>
 
 @code
 {
@@ -42,7 +43,7 @@
         output2 = sequences.Select(x => ExtrapolateBack(x)).Aggregate((a, b) => a + b);
     }
 
-    int Extrapolate(List<int> sequence)
+    List<List<int>> GenerateDifferences(List<int> sequence)
     {
         List<List<int>> differences = new List<List<int>>();
         differences.Add(sequence);
@@ -63,8 +64,12 @@
             differences.Add(d);
         }
 
-        //Is this extra 0 actually required?
-        differences.Last().Add(0);
+        return differences;
+    }
+
+    int Extrapolate(List<int> sequence)
+    {
+        List<List<int>> differences = GenerateDifferences(sequence);
 
         for (int i = differences.Count - 2; i >= 0; i--)
         {
@@ -76,26 +81,7 @@
 
     int ExtrapolateBack(List<int> sequence)
     {
-        List<List<int>> differences = new List<List<int>>();
-        differences.Add(sequence);
-        bool AllZero = false;
-
-        while (!AllZero)
-        {
-            AllZero = true;
-            List<int> d = new List<int>();
-
-            for (int i = 1; i < differences.Last().Count; i++)
-            {
-                d.Add(differences.Last()[i] - differences.Last()[i - 1]);
-                if (d.Last() != 0)
-                    AllZero = false;
-            }
-
-            differences.Add(d);
-        }
-
-        //Everything above this point is the same as Extrapolate. Refactor it.
+        List<List<int>> differences = GenerateDifferences(sequence);
 
         for (int i = differences.Count - 2; i >= 0; i--)
         {
