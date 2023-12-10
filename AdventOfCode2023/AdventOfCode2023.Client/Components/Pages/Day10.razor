@@ -1,0 +1,131 @@
+﻿@page "/Day10"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 10</PageTitle>
+
+@* <style>
+    body {
+        background-image: url(/media/green-trees.png);
+        color: white;
+    }
+</style> *@
+
+<h3>Day 10</h3>
+
+<div style="display:table-cell">
+    <textarea cols="140" rows="25" @bind="puzzleInput" />
+    <div align="right"><button @onclick="Run">Run</button></div>
+</div>
+
+<hr />
+<h3>Part 1:</h3>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+
+@code
+{
+    int output1 = 0;
+    int output2 = 0;
+    string puzzleInput = "";
+
+    string[] maze = [];
+
+    void Run()
+    {
+        //Each pipe connects to exactly two other spaces, so the main loop must not have any branches or dead ends
+        //What I'm looking for is the number of pipes in the main loop (including the S), divided by 2
+        //I could just prune any non-connected pipes... No, what if there's another separate loop?
+
+        //OK, how about we stick with the simple array of strings? Each point will have an address of (row * 1000) + col
+        //Something like NextPipe(int prev, int curr) should be enough to solve part 1. Just start adjacent to S and keep going until you reach it.
+        maze = puzzleInput.Trim().Split("\n");
+
+        //Search for starting point
+        int prev = 0;
+        for (int r = 0; r < maze.Length; r++)
+        {
+            for (int c = 0; c < maze[0].Length; c++)
+            {
+                if (maze[r][c] == 'S')
+                {
+                    prev = r * 1000 + c;
+                }
+            }
+        }
+
+        //Find a pipe connected to the starting point
+        int curr = 0;
+        if ("|7F".Contains(maze[prev / 1000 - 1][prev % 1000]))
+            curr = prev - 1000;
+        else if ("L|J".Contains(maze[prev / 1000 + 1][prev % 1000]))
+            curr = prev + 1000;
+        else if ("-LF".Contains(maze[prev / 1000][prev % 1000 - 1]))
+            curr = prev - 1;
+        else
+            curr = prev + 1;
+
+        //Trace through main loop to count the number of pipes in it
+        int tmp;
+        int counter = 1;
+        while (maze[curr / 1000][curr % 1000] != 'S')
+        {
+            tmp = curr;
+            curr = NextPipe(prev, curr);
+            prev = tmp;
+            counter++;
+        }
+
+        output1 = counter / 2;
+    }
+
+    //Each pipe is connected to two others. Return the one that isn't prev
+    //This is meant for tracing through a loop of pipes
+    int NextPipe(int prev, int curr)
+    {
+        char pipe = maze[curr / 1000][curr % 1000];
+        int a, b;
+
+        if (pipe == '|')
+        {
+            a = curr - 1000;
+            b = curr + 1000;
+        }
+        else if (pipe == '-')
+        {
+            a = curr - 1;
+            b = curr + 1;
+        }
+        else if (pipe == 'L')
+        {
+            a = curr - 1000;
+            b = curr + 1;
+        }
+        else if (pipe == 'J')
+        {
+            a = curr - 1000;
+            b = curr - 1;
+        }
+        else if (pipe == '7')
+        {
+            a = curr - 1;
+            b = curr + 1000;
+        }
+        else if (pipe == 'F')
+        {
+            a = curr + 1;
+            b = curr + 1000;
+        }
+        else
+            return -1;
+
+        if (a == prev)
+            return b;
+        return a;
+    }
+}
