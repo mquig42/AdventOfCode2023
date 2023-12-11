@@ -3,12 +3,12 @@
 
 <PageTitle>Day 10</PageTitle>
 
-@* <style>
+<style>
     body {
-        background-image: url(/media/green-trees.png);
-        color: white;
+        background-image: url(/media/background-vertical-stripes.gif);
+        color: midnightblue;
     }
-</style> *@
+</style>
 
 <h3>Day 10</h3>
 
@@ -27,6 +27,7 @@
 
 <hr />
 <h3>Notes</h3>
+<p>Our first properly difficult Sunday puzzle. When I started part 1, I considered using a graph library. Part 1 didn't require that, and it wouldn't have helped with part 2. A simple array of strings worked well enough for representing the puzzle input.</p>
 
 @code
 {
@@ -72,16 +73,42 @@
 
         //Trace through main loop to count the number of pipes in it
         int tmp;
-        int counter = 1;
+        HashSet<int> perimeter = new HashSet<int>();
+        perimeter.Add(prev);
         while (maze[curr / 1000][curr % 1000] != 'S')
         {
+            perimeter.Add(curr);
             tmp = curr;
             curr = NextPipe(prev, curr);
             prev = tmp;
-            counter++;
         }
 
-        output1 = counter / 2;
+        output1 = perimeter.Count / 2;
+
+        //Now solve part 2
+        int enclosedArea = 0;
+        bool inside = false;
+        for (int r = 0; r < maze.Length; r++)
+        {
+            for (int c = 0; c < maze[0].Length; c++)
+            {
+                //Since we're starting from the top, any pipe connected North will toggle inside
+                //For example, the line ..F--7..||.. contains no enclosed tiles
+                //But ..L--7..|.. contains two enclosed tiles. The boundaries of the enclosed area are L and |
+                //This will fail if The starting point (S) is a placeholder for |, L, or J. That isn't true for my input or any of the samples, so I didn't need to handle it.
+                if (perimeter.Contains(r * 1000 + c) && "|LJ".Contains(maze[r][c]))
+                {
+                    inside = !inside;
+                }
+
+                if (inside && !perimeter.Contains(r * 1000 + c))
+                    enclosedArea++;
+
+            }
+        }
+
+        output2 = enclosedArea;
+
     }
 
     //Each pipe is connected to two others. Return the one that isn't prev
