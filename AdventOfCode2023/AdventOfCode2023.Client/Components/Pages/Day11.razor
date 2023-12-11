@@ -1,0 +1,159 @@
+﻿@page "/Day11"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 11</PageTitle>
+
+<style>
+    body {
+        background-image: url(/media/background11.jpg);
+        color: white;
+    }
+</style>
+
+<h3>Day 11</h3>
+
+<div style="display:table-cell">
+    <textarea cols="140" rows="25" @bind="puzzleInput" />
+    <div align="right"><button @onclick="Run">Run</button></div>
+</div>
+
+<hr />
+<h3>Part 1:</h3>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+<p>I chose to represent galaxies as a list of coordinates rather than storing the entire map as a two dimensional array. For part 2, all I had to do was change a couple of 1s to 999999s, and then switch an <code>int</code> to a <code>long</code> to avoid an overflow. Anyone who tried to store the entire map as a 2 dimensional array would have had a much more difficult time.</p>
+
+@code
+{
+    //My input has 449 galaxies. That means there are 100,576 pairs.
+    //Best way to implement expansion is probably to read all galaxies into a list,
+    //then search for blank rows and columns and edit the coords accordingly
+    //For example, if row 6 is empty, then every galaxy with a row number >6 gets incremented by 1
+
+    int output1 = 0;
+    long output2 = 0;
+    string puzzleInput = "";
+
+    List<Galaxy> galaxies = new List<Galaxy>();
+
+    void Run()
+    {
+        string[] lines = puzzleInput.Trim().Split("\n");
+
+        galaxies.Clear();
+
+        for (int row = 0; row < lines.Length; row++)
+        {
+            for (int col = 0; col < lines[0].Length; col++)
+            {
+                if (lines[row][col] == '#')
+                {
+                    galaxies.Add(new Galaxy(row, col));
+                }
+            }
+        }
+
+        bool isEmpty;
+
+        //Find empty rows and expand
+        for (int row = 0; row < lines.Length; row++)
+        {
+            isEmpty = true;
+            for (int col = 0; col < lines[0].Length; col++)
+            {
+                if (lines[row][col] == '#')
+                    isEmpty = false;
+            }
+            if (isEmpty)
+            {
+                ExpandRows(row);
+            }
+        }
+
+        //Find empty columns and expand
+        for(int col=0;col<lines[0].Length;col++)
+        {
+            isEmpty = true;
+            for(int row=0;row<lines.Length;row++)
+            {
+                if (lines[row][col] == '#')
+                    isEmpty = false;
+            }
+            if (isEmpty)
+            {
+                ExpandCols(col);
+            }
+        }
+
+        //Sum all distances
+        int sum1 = 0;
+        long sum2 = 0;
+        for(int i=0;i<galaxies.Count-1;i++)
+        {
+            for(int j=i+1;j<galaxies.Count;j++)
+            {
+                sum1 += galaxies[i].Distance(galaxies[j], 1);
+                sum2 += galaxies[i].Distance(galaxies[j], 999999);
+            }
+        }
+
+        output1 = sum1;
+        output2 = sum2;
+    }
+
+    void ExpandRows(int row)
+    {
+        foreach(Galaxy g in galaxies)
+        {
+            if (g.Row > row)
+                g.RowExpansions++;
+        }
+    }
+
+    void ExpandCols(int col)
+    {
+        foreach(Galaxy g in galaxies)
+        {
+            if (g.Col > col)
+                g.ColExpansions++;
+        }
+    }
+
+    private class Galaxy
+    {
+        public int Row;
+        public int Col;
+        public int RowExpansions;
+        public int ColExpansions;
+
+        public Galaxy(int r, int c)
+        {
+            Row = r;
+            Col = c;
+            RowExpansions = 0;
+            ColExpansions = 0;
+        }
+
+        public int Distance(Galaxy dest, int expansionAmount)
+        {
+            //Manhattan distance
+            return Math.Abs(this.ExpandedRow(expansionAmount) - dest.ExpandedRow(expansionAmount)) + Math.Abs(this.ExpandedCol(expansionAmount) - dest.ExpandedCol(expansionAmount));
+        }
+
+        public int ExpandedRow(int expansionAmount)
+        {
+            return Row + RowExpansions * expansionAmount;
+        }
+
+        public int ExpandedCol(int expansionAmount)
+        {
+            return Col + ColExpansions * expansionAmount;
+        }
+    }
+}
