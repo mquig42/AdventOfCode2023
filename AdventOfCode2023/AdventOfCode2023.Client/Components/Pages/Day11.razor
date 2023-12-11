@@ -27,15 +27,122 @@
 
 <hr />
 <h3>Notes</h3>
+<p>I chose to represent galaxies as a list of coordinates rather than storing the entire map as a two dimensional array. For part 2, all I had to do was change a couple of 1s to 999999s, and then switch an <code>int</code> to a <code>long</code> to avoid an overflow. Anyone who tried to store the entire map as a 2 dimensional array would have had a much more difficult time.</p>
 
 @code
 {
+    //My input has 449 galaxies. That means there are 100,576 pairs.
+    //Best way to implement expansion is probably to read all galaxies into a list,
+    //then search for blank rows and columns and edit the coords accordingly
+    //For example, if row 6 is empty, then every galaxy with a row number >6 gets incremented by 1
+
+    //Todo: I just modified my part 1 code to solve part 2. Need to make something that works for both parts.
+
     int output1 = 0;
-    int output2 = 0;
+    long output2 = 0;
     string puzzleInput = "";
+
+    List<Galaxy> galaxies = new List<Galaxy>();
 
     void Run()
     {
+        string[] lines = puzzleInput.Trim().Split("\n");
 
+        galaxies.Clear();
+
+        for (int row = 0; row < lines.Length; row++)
+        {
+            for (int col = 0; col < lines[0].Length; col++)
+            {
+                if (lines[row][col] == '#')
+                {
+                    galaxies.Add(new Galaxy(row, col));
+                }
+            }
+        }
+
+        bool isEmpty;
+
+        //Find empty rows and expand
+        for (int row = 0; row < lines.Length; row++)
+        {
+            isEmpty = true;
+            for (int col = 0; col < lines[0].Length; col++)
+            {
+                if (lines[row][col] == '#')
+                    isEmpty = false;
+            }
+            if (isEmpty)
+            {
+                ExpandRows(row);
+            }
+        }
+
+        //Find empty columns and expand
+        for(int col=0;col<lines[0].Length;col++)
+        {
+            isEmpty = true;
+            for(int row=0;row<lines.Length;row++)
+            {
+                if (lines[row][col] == '#')
+                    isEmpty = false;
+            }
+            if (isEmpty)
+            {
+                ExpandCols(col);
+            }
+        }
+
+        //Sum all distances
+        long sum = 0;
+        for(int i=0;i<galaxies.Count-1;i++)
+        {
+            for(int j=i+1;j<galaxies.Count;j++)
+            {
+                sum += galaxies[i].Distance(galaxies[j]);
+            }
+        }
+
+        output2 = sum;
+    }
+
+    void ExpandRows(int row)
+    {
+        foreach(Galaxy g in galaxies)
+        {
+            if (g.Row > row)
+                g.ExpandedRow += 999999;
+        }
+    }
+
+    void ExpandCols(int col)
+    {
+        foreach(Galaxy g in galaxies)
+        {
+            if (g.Col > col)
+                g.ExpandedCol += 999999;
+        }
+    }
+
+    private class Galaxy
+    {
+        public int Row;
+        public int Col;
+        public long ExpandedRow;
+        public long ExpandedCol;
+
+        public Galaxy(int r, int c)
+        {
+            Row = r;
+            ExpandedRow = r;
+            Col = c;
+            ExpandedCol = c;
+        }
+
+        public long Distance(Galaxy dest)
+        {
+            //Manhattan distance
+            return Math.Abs(this.ExpandedRow - dest.ExpandedRow) + Math.Abs(this.ExpandedCol - dest.ExpandedCol);
+        }
     }
 }
