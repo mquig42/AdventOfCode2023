@@ -3,17 +3,17 @@
 
 <PageTitle>Day 11</PageTitle>
 
-@* <style>
+<style>
     body {
-        background-image: url(/media/background-vertical-stripes.gif);
-        color: midnightblue;
+        background-image: url(/media/background11.jpg);
+        color: white;
     }
-</style> *@
+</style>
 
 <h3>Day 11</h3>
 
 <div style="display:table-cell">
-    <textarea cols="80" rows="25" @bind="puzzleInput" />
+    <textarea cols="140" rows="25" @bind="puzzleInput" />
     <div align="right"><button @onclick="Run">Run</button></div>
 </div>
 
@@ -35,8 +35,6 @@
     //Best way to implement expansion is probably to read all galaxies into a list,
     //then search for blank rows and columns and edit the coords accordingly
     //For example, if row 6 is empty, then every galaxy with a row number >6 gets incremented by 1
-
-    //Todo: I just modified my part 1 code to solve part 2. Need to make something that works for both parts.
 
     int output1 = 0;
     long output2 = 0;
@@ -94,16 +92,19 @@
         }
 
         //Sum all distances
-        long sum = 0;
+        int sum1 = 0;
+        long sum2 = 0;
         for(int i=0;i<galaxies.Count-1;i++)
         {
             for(int j=i+1;j<galaxies.Count;j++)
             {
-                sum += galaxies[i].Distance(galaxies[j]);
+                sum1 += galaxies[i].Distance(galaxies[j], 1);
+                sum2 += galaxies[i].Distance(galaxies[j], 999999);
             }
         }
 
-        output2 = sum;
+        output1 = sum1;
+        output2 = sum2;
     }
 
     void ExpandRows(int row)
@@ -111,7 +112,7 @@
         foreach(Galaxy g in galaxies)
         {
             if (g.Row > row)
-                g.ExpandedRow += 999999;
+                g.RowExpansions++;
         }
     }
 
@@ -120,7 +121,7 @@
         foreach(Galaxy g in galaxies)
         {
             if (g.Col > col)
-                g.ExpandedCol += 999999;
+                g.ColExpansions++;
         }
     }
 
@@ -128,21 +129,31 @@
     {
         public int Row;
         public int Col;
-        public long ExpandedRow;
-        public long ExpandedCol;
+        public int RowExpansions;
+        public int ColExpansions;
 
         public Galaxy(int r, int c)
         {
             Row = r;
-            ExpandedRow = r;
             Col = c;
-            ExpandedCol = c;
+            RowExpansions = 0;
+            ColExpansions = 0;
         }
 
-        public long Distance(Galaxy dest)
+        public int Distance(Galaxy dest, int expansionAmount)
         {
             //Manhattan distance
-            return Math.Abs(this.ExpandedRow - dest.ExpandedRow) + Math.Abs(this.ExpandedCol - dest.ExpandedCol);
+            return Math.Abs(this.ExpandedRow(expansionAmount) - dest.ExpandedRow(expansionAmount)) + Math.Abs(this.ExpandedCol(expansionAmount) - dest.ExpandedCol(expansionAmount));
+        }
+
+        public int ExpandedRow(int expansionAmount)
+        {
+            return Row + RowExpansions * expansionAmount;
+        }
+
+        public int ExpandedCol(int expansionAmount)
+        {
+            return Col + ColExpansions * expansionAmount;
         }
     }
 }
