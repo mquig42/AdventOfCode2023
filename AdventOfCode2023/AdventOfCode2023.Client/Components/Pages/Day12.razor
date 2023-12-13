@@ -1,0 +1,119 @@
+﻿@page "/Day12"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 12</PageTitle>
+
+@* <style>
+    body {
+        background-image: url(/media/background11.jpg);
+        color: white;
+    }
+</style> *@
+
+<h3>Day 12</h3>
+
+<div style="display:table-cell">
+    <textarea cols="80" rows="25" @bind="puzzleInput" />
+    <div align="right"><button @onclick="Run">Run</button></div>
+</div>
+
+<hr />
+<h3>Part 1:</h3>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+<p>How long has he been waiting to use that hot springs / onsen joke?</p>
+
+@code
+{
+    int output1 = 42;
+    int output2 = 0;
+    string puzzleInput = "";
+
+    //Current status: This can find the correct solution to part 1, but it's slow. I ended up splitting my input into 10 chunks of 100 lines each, running them separately, and adding them up manually.
+    //Needs to be faster to solve part 2. Reddit says memoization can help, but that could require a different recursion strategy. The way I've done it, it would be unlikely to make the same call twice.
+
+    void Run()
+    {
+        SpringRow[] rows = puzzleInput.Trim().Split("\n").Select(x => new SpringRow(x)).ToArray();
+
+        output1 = rows.Select(x => x.SolutionCount()).Aggregate((a, b) => a + b);
+    }
+
+    private class SpringRow
+    {
+        private string springs;
+        private int[] counts;
+
+        public SpringRow(string line)
+        {
+            springs = line.Split()[0];
+            counts = line.Split()[1].Split(',').Select(x => int.Parse(x)).ToArray();
+        }
+
+        public int SolutionCount()
+        {
+            //Find number of known broken springs, since Recursive1 needs the number of unknown broken springs
+            int bork = 0;
+            foreach(char s in springs)
+                if (s == '#')
+                    bork++;
+
+            return Recursive1(springs, counts.Sum() - bork);
+        }
+
+        //Recursive function to find solution for part 1
+        private int Recursive1(string s, int remaining)
+        {
+            if (remaining > 0 && !s.Contains('?'))
+                return 0;
+            else if (remaining == 0)
+                return Valid(s.Replace('?', '.')) ? 1 : 0;
+            else
+            {
+                string before = s.Substring(0, s.IndexOf('?'));
+                string after = s.Substring(s.IndexOf('?') + 1);
+                return Recursive1(before + '.' + after, remaining) + Recursive1(before + '#' + after, remaining - 1);
+            }
+        }
+
+        //Returns true if the given string matches the checksums in this.counts[]
+        private bool Valid(string s)
+        {
+            int c = 0;
+            int group = 0;
+            char last = '.';
+
+            try
+            {
+                foreach (char spring in s + '.')
+                {
+                    if (spring == '.' && last == '#')
+                    {
+                        if (c != counts[group])
+                            return false;
+                        c = 0;
+                        last = spring;
+                        group++;
+                    }
+                    else if (spring == '#')
+                    {
+                        c++;
+                        last = spring;
+                    }
+                }
+
+                return group == counts.Length;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+}
