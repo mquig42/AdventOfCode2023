@@ -1,0 +1,163 @@
+﻿@page "/Day13"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 13</PageTitle>
+
+<style>
+    body {
+        background-image: url(/media/owl.gif);
+        color: white;
+    }
+</style>
+
+<h3>Day 13</h3>
+
+<div style="display:table-cell">
+    <textarea cols="80" rows="25" @bind="puzzleInput" />
+    <div align="right"><button @onclick="Run">Run</button></div>
+</div>
+
+<hr />
+<h3>Part 1:</h3>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+<p>The only real optimization I did here was a hash function to convert each row or column of a pattern into an integer. That should make comparisons faster. For part 2, I simply tried every possible position for the smudge.</p>
+
+@code
+{
+    int output1 = 0;
+    int output2 = 0;
+    string puzzleInput = "";
+
+    //Puzzle input contains 100 patterns. Each one is small, so brute force is an option.
+    //On the other hand, could hash each row and column by treating it as a binary string, with . as 0 and # as 1
+    //Then I'm just comparing integers, which should be much faster.
+
+    void Run()
+    {
+        List<string[]> patterns = new List<string[]>();
+        List<string> pattern = new List<string>();
+
+        foreach(string line in puzzleInput.Split("\n"))
+        {
+            if(line != "")
+            {
+                pattern.Add(line);
+            }
+            else
+            {
+                patterns.Add(pattern.ToArray());
+                pattern.Clear();
+            }
+        }
+
+        output1 = patterns.Select(x => Score(x, -1)).Sum();
+        output2 = patterns.Select(x => Score2(x)).Sum();
+    }
+
+    //Treats a row of s as a binary number (. is 0, # is 1) and converts it to int
+    int HashRow(string[] s, int row)
+    {
+        int place = 1;
+        int sum = 0;
+        for (int i = s[row].Length - 1; i >= 0; i--)
+        {
+            if (s[row][i] == '#')
+                sum += place;
+            place *= 2;
+        }
+        return sum;
+    }
+
+    //Treats a column of s as a binary number (. is 0, # is 1) and converts it to int
+    int HashCol(string[] s, int col)
+    {
+        int place = 1;
+        int sum = 0;
+        for (int i = s.Length - 1; i >= 0; i--)
+        {
+            if (s[i][col] == '#')
+                sum += place;
+            place *= 2;
+        }
+        return sum;
+    }
+
+    //Returns true if the first n values of hashes equal the next n values in reverse
+    bool IsMirrored(int[] hashes, int n)
+    {
+        int lo = n - 1;
+        int hi = n;
+        while(lo >= 0 && hi < hashes.Length)
+        {
+            if (hashes[lo] != hashes[hi])
+                return false;
+            lo--;
+            hi++;
+        }
+        return true;
+    }
+
+    //Calculates the score of each pattern, using the rules from part 1
+    //For part 2, there may be 2 valid scores. I added the avoid param to skip one of them
+    int Score(string[] pattern, int avoid)
+    {
+        //Start by looking at rows
+        int[] hashes = new int[pattern.Length];
+        for (int i = 0; i < hashes.Length; i++)
+            hashes[i] = HashRow(pattern, i);
+
+        for (int i = 1; i < hashes.Length; i++)
+            if (IsMirrored(hashes, i) && i * 100 != avoid)
+                return i * 100;
+
+        //Now try columns
+        hashes = new int[pattern[0].Length];
+        for (int i = 0; i < hashes.Length; i++)
+            hashes[i] = HashCol(pattern, i);
+
+        for (int i = 1; i < hashes.Length; i++)
+            if (IsMirrored(hashes, i) && i != avoid)
+                return i;
+
+        return 0;
+    }
+
+    char Invert(char c)
+    {
+        if (c == '.')
+            return '#';
+        return '.';
+    }
+
+    string[] Smudge(string[] pattern, int row, int col)
+    {
+        string[] patternCopy = (string[])pattern.Clone();
+        patternCopy[row] = pattern[row].Substring(0, col) + Invert(pattern[row][col]) + pattern[row].Substring(col + 1);
+        return patternCopy;
+    }
+
+    int Score2(string[] pattern)
+    {
+        int avoid = Score(pattern, -1);
+        int s2;
+
+        for(int row = 0; row < pattern.Length; row++)
+        {
+            for(int col = 0; col < pattern[0].Length; col++)
+            {
+                s2 = Score(Smudge(pattern, row, col), avoid);
+                if (s2 != 0)
+                    return s2;
+            }
+        }
+
+        return 0;
+    }
+}
