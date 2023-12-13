@@ -1,14 +1,15 @@
 ﻿@page "/Day12"
 @rendermode InteractiveWebAssembly
+@using System.Text.RegularExpressions;
 
 <PageTitle>Day 12</PageTitle>
 
-@* <style>
+<style>
     body {
-        background-image: url(/media/background11.jpg);
+        background-image: url(/media/background12.jpg);
         color: white;
     }
-</style> *@
+</style>
 
 <h3>Day 12</h3>
 
@@ -28,92 +29,137 @@
 <hr />
 <h3>Notes</h3>
 <p>How long has he been waiting to use that hot springs / onsen joke?</p>
+<p>I originally solved this with recursion, but the approach wasn't amenable to memoization. I had to write a new recursive function that throws away any full groups at the beginning of the string. That works well enough as a command line application, solving my input in about 40 seconds while using several GB of memory for the memoization cache. It runs much slower in WebAssembly.</p>
 
 @code
 {
-    int output1 = 42;
-    int output2 = 0;
+    long output1 = 0;
+    long output2 = 0;
     string puzzleInput = "";
 
-    //Current status: This can find the correct solution to part 1, but it's slow. I ended up splitting my input into 10 chunks of 100 lines each, running them separately, and adding them up manually.
-    //Needs to be faster to solve part 2. Reddit says memoization can help, but that could require a different recursion strategy. The way I've done it, it would be unlikely to make the same call twice.
+    //Recursive cache
+    Dictionary<string, long> memo = new Dictionary<string, long>();
 
     void Run()
     {
-        SpringRow[] rows = puzzleInput.Trim().Split("\n").Select(x => new SpringRow(x)).ToArray();
-
-        output1 = rows.Select(x => x.SolutionCount()).Aggregate((a, b) => a + b);
+        memo.Clear();
+        output1 = puzzleInput.Trim().Split("\n").Select(x => CountSolutions(x)).Aggregate((a, b) => a + b);
+        output2 = puzzleInput.Trim().Split("\n").Select(x => CountSolutions(Unfold(x))).Aggregate((a, b) => a + b);
     }
 
-    private class SpringRow
+    //Recursion + memoization. Solves part 2 of my input in about 40s as a command line app. Performance as wasm is lower.
+    long CountSolutions(string line)
     {
-        private string springs;
-        private int[] counts;
+        if (memo.ContainsKey(line))
+            return memo[line];
 
-        public SpringRow(string line)
+        string springs = line.Split()[0];
+        int[] counts = line.Split()[1].Split(',').Select(x => int.Parse(x)).ToArray();
+
+        //Group counter relies on groups ending with .
+        if (!springs.EndsWith('.'))
+            springs = springs + '.';
+
+        //Check for terminal states
+        if(!springs.Contains('?'))
         {
-            springs = line.Split()[0];
-            counts = line.Split()[1].Split(',').Select(x => int.Parse(x)).ToArray();
+            //Special case: string doesn't contain ? or #, and counts doesn't contain any groups
+            if (counts.Length == 1 && counts[0] == 0 && !springs.Contains('#'))
+            {
+                memo[line] = 1;
+                return 1;
+            }
+            if(Valid(springs, counts))
+            {
+                memo[line] = 1;
+                return 1;
+            }
+            memo[line] = 0;
+            return 0;
         }
 
-        public int SolutionCount()
+        //Check to see if line starts with a complete block of broken springs
+        if (Regex.IsMatch(springs, @"^\.*#+\."))
         {
-            //Find number of known broken springs, since Recursive1 needs the number of unknown broken springs
-            int bork = 0;
-            foreach(char s in springs)
-                if (s == '#')
-                    bork++;
-
-            return Recursive1(springs, counts.Sum() - bork);
-        }
-
-        //Recursive function to find solution for part 1
-        private int Recursive1(string s, int remaining)
-        {
-            if (remaining > 0 && !s.Contains('?'))
-                return 0;
-            else if (remaining == 0)
-                return Valid(s.Replace('?', '.')) ? 1 : 0;
+            if(GroupLength(springs) == counts[0])
+            {
+                //If group length is correct, remove it and continue with the rest of the string
+                springs = springs.Substring(springs.IndexOf("#.") + 1);
+                counts = counts.TakeLast(counts.Length - 1).ToArray();
+            }
             else
             {
-                string before = s.Substring(0, s.IndexOf('?'));
-                string after = s.Substring(s.IndexOf('?') + 1);
-                return Recursive1(before + '.' + after, remaining) + Recursive1(before + '#' + after, remaining - 1);
+                //First group is the wrong length. No valid solutions will be found
+                memo[line] = 0;
+                return 0;
             }
         }
 
-        //Returns true if the given string matches the checksums in this.counts[]
-        private bool Valid(string s)
+        string before = springs.Substring(0, springs.IndexOf('?'));
+        string after = springs.Substring(springs.IndexOf('?') + 1);
+        string countsStr = "";
+        foreach (int i in counts)
+            countsStr = countsStr + i.ToString() + ",";
+        countsStr = countsStr.Trim(',');
+        if (countsStr == "")
+            countsStr = "0";
+
+        long r = CountSolutions(before + '.' + after + " " + countsStr) + CountSolutions(before + '#' + after + " " + countsStr);
+        memo[line] = r;
+        return r;
+    }
+
+    int GroupLength(string line)
+    {
+        int count = 0;
+        foreach(char c in line)
         {
-            int c = 0;
-            int group = 0;
-            char last = '.';
-
-            try
-            {
-                foreach (char spring in s + '.')
-                {
-                    if (spring == '.' && last == '#')
-                    {
-                        if (c != counts[group])
-                            return false;
-                        c = 0;
-                        last = spring;
-                        group++;
-                    }
-                    else if (spring == '#')
-                    {
-                        c++;
-                        last = spring;
-                    }
-                }
-
-                return group == counts.Length;
-            }
-            catch
-            {
-                return false;
-            }
+            if (c == '#')
+                count++;
+            else if (c == '.' && count > 0)
+                break;
         }
+        return count;
+    }
+
+    bool Valid(string s, int[] counts)
+    {
+        int c = 0;
+        int group = 0;
+        char last = '.';
+
+        try
+        {
+            foreach (char spring in s)
+            {
+                if (spring == '.' && last == '#')
+                {
+                    if (c != counts[group])
+                        return false;
+                    c = 0;
+                    last = spring;
+                    group++;
+                }
+                else if (spring == '#')
+                {
+                    c++;
+                    last = spring;
+                }
+            }
+
+            return group == counts.Length;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    string Unfold(string line)
+    {
+        string springs = line.Split()[0];
+        string counts = line.Split()[1];
+
+        return string.Format("{0}?{0}?{0}?{0}?{0} {1},{1},{1},{1},{1}", springs, counts);
     }
 }
