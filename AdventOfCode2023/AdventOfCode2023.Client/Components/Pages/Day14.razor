@@ -3,14 +3,16 @@
 
 <PageTitle>Day 14</PageTitle>
 
-@* <style>
+<style>
     body {
-        background-image: url(/media/owl.gif);
-        color: white;
+        background-image: url(/media/background14.gif);
     }
-</style> *@
+</style>
 
-<h3>Day 14</h3>
+<div style="background-color:white; width:fit-content; border-radius:5px; border:2px solid red; padding:15px;">
+    <h2 style="margin-top:0px; margin-bottom:0px; color:#4D9F37;">Day 14</h2>
+</div>
+<br />
 
 <div style="display:table-cell">
     <textarea cols="100" rows="25" @bind="puzzleInput" />
@@ -18,16 +20,21 @@
 </div>
 
 <hr />
-<h3>Part 1:</h3>
-<p>@output1</p>
+<div style="background-color:white; width:fit-content; border-radius:5px; border:2px solid red; padding:15px;">
+    <h3 style="margin-top:0px">Part 1:</h3>@output1
+</div>
 
 <hr />
-<h3>Part 2:</h3>
-<p>@output2</p>
+<div style="background-color:white; width:fit-content; border-radius:5px; border:2px solid red; padding:15px;">
+    <h3 style="margin-top:0px">Part 2:</h3>@output2
+</div>
 
 <hr />
-<h3>Notes</h3>
-
+<div style="background-color:white; width:75%; border-radius:5px; border:2px solid red; padding:15px;">
+<h3 style="margin-top:0px">Notes</h3>
+This was fun. I used a similar approach to last year's <a href="https://adventofcode.com/2022/day/17">volcano tetris</a> puzzle. Write a simulation and run it for a limited number of steps, then examine the data it produced and figure out how to extrapolate from there.<br /><br />
+For a full sized puzzle input, this should take about 40 seconds to run.
+</div>
 
 @code
 {
@@ -48,12 +55,21 @@
     //Update: solution works for part 1. Part 2 is a similar question, but much bigger.
     //Instead of tilting the platform once, tilt it 4 billion times.
 
+    //Update: Solved part 2 manually. The load values eventually fall into a short repeating pattern.
+    //Need to automate finding this cycle and then do a bit of math to figure out where n=10^9 fits into it.
+
     void Run()
     {
         string[] grid = puzzleInput.Trim().Split("\n");
         extent = grid.Length;
         square.Clear();
         round.Clear();
+
+        //Add wall of square rocks to the left and right edges of the grid
+        for (int i = 0; i < grid.Length; i++)
+        {
+            grid[i] = "#" + grid[i] + "#";
+        }
 
         for (int row = 0; row < grid.Length; row++)
         {
@@ -68,10 +84,59 @@
 
         Tilt(-1000);
         output1 = Load();
+
+        //Basing this on the pattern my input produced. Not sure how general it is.
+        //1. Find the lowest Load value and record its position
+        //2. Find the highest value that occurs after that position
+        //3. Find the next position where that high value occurs
+        //4. Math
+
+        int currentLoad = Load();
+        int lo = currentLoad;
+        int loPos = 0;
+        List<int> loadHistory = new List<int>();
+        loadHistory.Add(currentLoad);
+
+        for (int i = 1; i < 250; i++)
+        {
+            Cycle();
+            currentLoad = Load();
+            if (currentLoad < lo)
+            {
+                lo = currentLoad;
+                loPos = i;
+            }
+            loadHistory.Add(currentLoad);
+        }
+
+        int hi = 0;
+        int hiPos = 0;
+        for (int i = loPos; i < loadHistory.Count; i++)
+        {
+            if (loadHistory[i] > hi)
+            {
+                hi = loadHistory[i];
+                hiPos = i;
+            }
+            else
+                break;
+        }
+
+        int hi2Pos = 0;
+        for (int i = hiPos + 1; i < loadHistory.Count; i++)
+        {
+            if (loadHistory[i] == hi)
+            {
+                hi2Pos = i;
+                break;
+            }
+        }
+
+        int period = hi2Pos - hiPos;
+        output2 = loadHistory[(1000000000 - hiPos) % period + hiPos];
     }
 
     //Move all round rocks in specified direction.
-    //Currently only works for moving North. Need to put conditions on that while loop for all 4 edges.
     void Tilt(int dir)
     {
         int rMoved;
@@ -81,9 +146,10 @@
         foreach(int r in round)
         {
             rMoved = r;
-            while (!moved.Contains(rMoved) && rMoved >= 0)
+            while (!moved.Contains(rMoved) && rMoved > 0 && rMoved < extent * 1000)
                 rMoved += dir;
-            rMoved -= dir;
+            while (moved.Contains(rMoved) || rMoved < 0 || rMoved > extent * 1000)
+                rMoved -= dir;
             moved.Add(rMoved);
         }
 
@@ -91,7 +157,7 @@
         round = moved;
     }
 
-    //Calculate the structural load (part 1 answer) of all round rocks
+    //Calculate the structural load of all round rocks
     int Load()
     {
         int sum = 0;
@@ -101,5 +167,35 @@
         }
 
         return sum;
+    }
+
+    //Tilt North, West, South, East
+    void Cycle()
+    {
+        Tilt(-1000);
+        Tilt(-1);
+        Tilt(1000);
+        Tilt(1);
+    }
+
+    //Plot the position of every round and square rock in the TextArea at the top of the page
+    //Only used for debugging the Tilt function
+    void PrintGrid(int width)
+    {
+        puzzleInput += '\n';
+
+        for (int row = 0; row < extent; row++)
+        {
+            for (int col = 1; col < width - 1; col++)
+            {
+                if (round.Contains(row * 1000 + col))
+                    puzzleInput += 'O';
+                else if (square.Contains(row * 1000 + col))
+                    puzzleInput += '#';
+                else
+                    puzzleInput += '.';
+            }
+            puzzleInput += '\n';
+        }
     }
 }
