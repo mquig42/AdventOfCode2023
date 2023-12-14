@@ -1,0 +1,102 @@
+﻿@page "/Day14"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 14</PageTitle>
+
+@* <style>
+    body {
+        background-image: url(/media/owl.gif);
+        color: white;
+    }
+</style> *@
+
+<h3>Day 14</h3>
+
+<div style="display:table-cell">
+    <textarea cols="100" rows="25" @bind="puzzleInput" />
+    <div align="right"><button @onclick="Run">Run</button></div>
+</div>
+
+<hr />
+<h3>Part 1:</h3>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+
+
+@code
+{
+    int output1 = 0;
+    int output2 = 0;
+    string puzzleInput = "";
+
+    HashSet<int> square = new HashSet<int>();
+    HashSet<int> round = new HashSet<int>();
+    int extent = 0;
+
+    //My puzzle input is a 100x100 grid containing 2054 round rocks and 1601 square rocks
+    //The platform can be tilted in 4 directions. Round rocks roll as far as they can before encountering an obstacle
+    //square rocks do not move, and can be represented as a HashSet. In fact, round rocks can be another HashSet.
+    //All rocks are just integers, representing row and column. For example, row 47 column 12 is 47012
+    //Directions are also integers. North is -1000, South is 1000, West is -1, East is 1
+
+    void Run()
+    {
+        string[] grid = puzzleInput.Trim().Split("\n");
+        extent = grid.Length;
+        square.Clear();
+        round.Clear();
+
+        for (int row = 0; row < grid.Length; row++)
+        {
+            for (int col = 0; col < grid[0].Length; col++)
+            {
+                if (grid[row][col] == '#')
+                    square.Add(row * 1000 + col);
+                if (grid[row][col] == 'O')
+                    round.Add(row * 1000 + col);
+            }
+        }
+
+        Tilt(-1000);
+        output1 = Load();
+    }
+
+    //Move all round rocks in specified direction.
+    //Currently only works for moving North. Need to put conditions on that while loop for all 4 edges.
+    void Tilt(int dir)
+    {
+        int rMoved;
+        HashSet<int> moved = new HashSet<int>();
+        moved.UnionWith(square);
+
+        foreach(int r in round)
+        {
+            rMoved = r;
+            while (!moved.Contains(rMoved) && rMoved >= 0)
+                rMoved += dir;
+            rMoved -= dir;
+            moved.Add(rMoved);
+        }
+
+        moved.ExceptWith(square);
+        round = moved;
+    }
+
+    //Calculate the structural load (part 1 answer) of all round rocks
+    int Load()
+    {
+        int sum = 0;
+        foreach(int r in round)
+        {
+            sum += extent - r / 1000;
+        }
+
+        return sum;
+    }
+}
