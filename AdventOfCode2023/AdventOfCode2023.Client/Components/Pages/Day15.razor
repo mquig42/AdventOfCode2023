@@ -43,7 +43,7 @@
     {
         output1 = puzzleInput.Trim().Split(',').Select(Hash).Sum();
 
-        Lens[] boxes = new Lens[256];
+        Lens[]? boxes = new Lens[256];
 
         foreach (string instr in puzzleInput.Trim().Split(','))
         {
@@ -57,7 +57,12 @@
             }
         }
 
-        output2 = 2;
+        int sum = 0;
+        for (int i = 0; i < boxes.Length; i++)
+        {
+            sum += Power(boxes[i], i + 1, 1);
+        }
+        output2 = sum;
     }
 
     int Hash(string s)
@@ -74,14 +79,14 @@
 
     void Remove(Lens[] boxes, string label)
     {
-        Lens l = boxes[Hash(label)];
+        Lens? l = boxes[Hash(label)];
 
         if (l == null)
             return;
 
         if (l.Label == label)
         {
-            boxes[Hash(label)] = l.Next;
+            boxes[Hash(label)] = l.Next!;
             return;
         }
 
@@ -98,32 +103,55 @@
 
     void Update(Lens[] boxes, string label, int focal)
     {
-        //If there already is a lens with this label, change the focal length
         int box = Hash(label);
-        Lens l = boxes[box];
+        Lens? l = boxes[box];
 
-        while (l != null)
+        //Add new lens if list is empty
+        if (l == null)
         {
-            if (l.Label == label)
+            boxes[box] = new Lens(label, focal, boxes[box]);
+            return;
+        }
+
+        //If head matches label, update it
+        if (l.Label == label)
+        {
+            l.Focal = focal;
+            return;
+        }
+
+        //Search for label in list, update focal if we find it
+        while (l.Next != null)
+        {
+            if (l.Next.Label == label)
             {
-                l.Focal = focal;
+                l.Next.Focal = focal;
                 return;
             }
             l = l.Next;
         }
 
-        //If we reach this point, no matches were found. Add a new lens to the box
-        boxes[box] = new Lens(label, focal, boxes[box]);
+        //Label was not found in list. Add it to the tail
+        l.Next = new Lens(label, focal, l.Next);
+    }
+
+    //Calculate power (part 2 answer)
+    int Power(Lens? l, int box, int depth)
+    {
+        if (l == null)
+            return 0;
+
+        return l.Focal * box * depth + Power(l.Next, box, depth + 1);
     }
 
     private class Lens
     {
         public string Label;
         public int Focal;
-        public Lens Next;
+        public Lens? Next;
 
         //Basic linked list node
-        public Lens(string label, int focal, Lens next)
+        public Lens(string label, int focal, Lens? next)
         {
             this.Label = label;
             this.Focal = focal;
