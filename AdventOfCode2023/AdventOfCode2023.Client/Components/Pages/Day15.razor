@@ -3,14 +3,14 @@
 
 <PageTitle>Day 15</PageTitle>
 
-@* <style>
+<style>
     body {
-        background-image: url(/media/owl.gif);
+        background-image: url(/media/background15.jpg);
         color: white;
     }
-</style> *@
+</style>
 
-<h3>Day 15</h3>
+<h2>Day 15</h2>
 
 <div style="display:table-cell">
     <textarea cols="80" rows="25" @bind="puzzleInput" />
@@ -27,17 +27,13 @@
 
 <hr />
 <h3>Notes</h3>
-
+<p>Another fun one. I use hash maps all the time, but it's been a while since I implemented one from scratch.</p>
 
 @code
 {
     int output1 = 0;
     int output2 = 0;
     string puzzleInput = "";
-
-    //So we're creating a hash map.
-    //Current status: Part 1 is done. All hashmap functions for part 2 are done. Only need to do the score calculation.
-    //Actually, that would be easier if I added new items to the tail of the linked list instead of the head. I've done it backwards.
 
     void Run()
     {
@@ -144,13 +140,13 @@
         return l.Focal * box * depth + Power(l.Next, box, depth + 1);
     }
 
+    //Basic linked list node
     private class Lens
     {
         public string Label;
         public int Focal;
         public Lens? Next;
 
-        //Basic linked list node
         public Lens(string label, int focal, Lens? next)
         {
             this.Label = label;
