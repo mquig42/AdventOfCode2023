@@ -1,0 +1,133 @@
+﻿@page "/Day15"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 15</PageTitle>
+
+@* <style>
+    body {
+        background-image: url(/media/owl.gif);
+        color: white;
+    }
+</style> *@
+
+<h3>Day 15</h3>
+
+<div style="display:table-cell">
+    <textarea cols="80" rows="25" @bind="puzzleInput" />
+    <div align="right"><button @onclick="Run">Run</button></div>
+</div>
+
+<hr />
+<h3>Part 1:</h3>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+
+
+@code
+{
+    int output1 = 0;
+    int output2 = 0;
+    string puzzleInput = "";
+
+    //So we're creating a hash map.
+    //Current status: Part 1 is done. All hashmap functions for part 2 are done. Only need to do the score calculation.
+    //Actually, that would be easier if I added new items to the tail of the linked list instead of the head. I've done it backwards.
+
+    void Run()
+    {
+        output1 = puzzleInput.Trim().Split(',').Select(Hash).Sum();
+
+        Lens[] boxes = new Lens[256];
+
+        foreach (string instr in puzzleInput.Trim().Split(','))
+        {
+            if (instr.EndsWith('-'))
+            {
+                Remove(boxes, instr.Substring(0, instr.Length - 1));
+            }
+            else if (instr.Contains('='))
+            {
+                Update(boxes, instr.Split('=')[0], int.Parse(instr.Split('=')[1]));
+            }
+        }
+
+        output2 = 2;
+    }
+
+    int Hash(string s)
+    {
+        int current = 0;
+
+        foreach(char c in s)
+        {
+            current = ((current + (int)c) * 17) % 256;
+        }
+
+        return current;
+    }
+
+    void Remove(Lens[] boxes, string label)
+    {
+        Lens l = boxes[Hash(label)];
+
+        if (l == null)
+            return;
+
+        if (l.Label == label)
+        {
+            boxes[Hash(label)] = l.Next;
+            return;
+        }
+
+        while (l.Next != null)
+        {
+            if (l.Next.Label == label)
+            {
+                l.Next = l.Next.Next;
+                return;
+            }
+            l = l.Next;
+        }
+    }
+
+    void Update(Lens[] boxes, string label, int focal)
+    {
+        //If there already is a lens with this label, change the focal length
+        int box = Hash(label);
+        Lens l = boxes[box];
+
+        while (l != null)
+        {
+            if (l.Label == label)
+            {
+                l.Focal = focal;
+                return;
+            }
+            l = l.Next;
+        }
+
+        //If we reach this point, no matches were found. Add a new lens to the box
+        boxes[box] = new Lens(label, focal, boxes[box]);
+    }
+
+    private class Lens
+    {
+        public string Label;
+        public int Focal;
+        public Lens Next;
+
+        //Basic linked list node
+        public Lens(string label, int focal, Lens next)
+        {
+            this.Label = label;
+            this.Focal = focal;
+            this.Next = next;
+        }
+    }
+}
