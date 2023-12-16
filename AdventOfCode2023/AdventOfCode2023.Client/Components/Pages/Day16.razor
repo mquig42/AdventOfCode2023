@@ -3,12 +3,12 @@
 
 <PageTitle>Day 16</PageTitle>
 
-@* <style>
+<style>
     body {
-        background-image: url(/media/background15.jpg);
-        color: white;
+        background-image: url(/media/background16.png);
+        color: darkblue;
     }
-</style> *@
+</style>
 
 <h2>Day 16</h2>
 
@@ -29,6 +29,10 @@
 <h3>Notes</h3>
 <p>My first attempt at solving part 1 used a single <code>HashSet</code> to track visited tiles, and traced each beam until it went out of bounds. When I tried it on the sample input, I got an infinite loop. Turns out not every beam goes off the edge of the grid. I had to use 4 <code>HashSet</code>s, one for each direction.</p>
 
+<script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.5.0"></script>
+<midi-player src="/media/hollyjol.mid" autoplay>
+</midi-player>
+
 @code
 {
     int output1 = 0;
@@ -41,26 +45,55 @@
     HashSet<int> eLeft = new HashSet<int>();
     HashSet<int> eUp = new HashSet<int>();
 
+    //Integer coordinate system. Position is a single value, row * 1000 + col. I have defined constants for the directions.
     const int RIGHT = 1;
     const int DOWN = 1000;
     const int LEFT = -1;
     const int UP = -1000;
 
-    //Integer coordinate system. Position is a single value, row*1000+col. I have defined constants for the directions.
-
     void Run()
     {
         grid = puzzleInput.Trim().Split('\n');
+
+        output1 = Energize(0, RIGHT);
+
+        int topMax = EdgeMax(0, 1, DOWN);
+        int leftMax = EdgeMax(0, 1000, RIGHT);
+        int bottomMax = EdgeMax((grid.Length - 1) * 1000, 1, UP);
+        int rightMax = EdgeMax(grid[0].Length - 1, 1000, LEFT);
+
+        output2 = Math.Max(topMax, Math.Max(leftMax, Math.Max(bottomMax, rightMax)));
+    }
+
+    //Tries starting a beam on each point along an edge of the grid. Returns maximum value
+    int EdgeMax(int startPos, int increment, int dir)
+    {
+        int m = 0;
+        int e;
+
+        for (int i = startPos; i >= 0 && i < grid.Length * 1000 && i % 1000 < grid[0].Length; i += increment)
+        {
+            e = Energize(i, dir);
+            m = Math.Max(e, m);
+        }
+
+        return m;
+    }
+
+    //Returns number of tiles energized by a beam with given starting position and direction
+    int Energize(int startPos, int dir)
+    {
         eRight.Clear();
         eDown.Clear();
         eLeft.Clear();
         eUp.Clear();
 
-        Beam(0, RIGHT);
+        Beam(startPos, dir);
+
         eRight.UnionWith(eDown);
         eRight.UnionWith(eLeft);
         eRight.UnionWith(eUp);
-        output1 = eRight.Count;
+        return eRight.Count;
     }
 
     void Beam(int pos, int dir)
