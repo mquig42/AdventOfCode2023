@@ -27,10 +27,10 @@
 
 <hr />
 <h3>Notes</h3>
-<p>My first attempt at solving part 1 used a single <code>HashSet</code> to track visited tiles, and traced each beam until it went out of bounds. When I tried it on the sample input, I got an infinite loop. Turns out not every beam goes off the edge of the grid. I had to use 4 <code>HashSet</code>s, one for each direction.</p>
+<p>My first attempt at solving part 1 used a single <code>HashSet</code> to track visited tiles, and traced each beam until it went out of bounds. When I tried it on the sample input, I got an infinite loop. Turns out not every beam goes off the edge of the grid. I had to use 4 <code>HashSet</code>s, one for each direction, in order to detect and stop on previously-encountered states.</p>
 
 <script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.5.0"></script>
-<midi-player src="/media/hollyjol.mid" autoplay>
+<midi-player src="/media/mele.mid" autoplay>
 </midi-player>
 
 @code
