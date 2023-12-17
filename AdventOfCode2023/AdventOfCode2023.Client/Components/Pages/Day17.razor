@@ -1,0 +1,50 @@
+﻿@page "/Day17"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 17</PageTitle>
+
+@* <style>
+    body {
+        background-image: url(/media/background16.png);
+        color: darkblue;
+    }
+</style> *@
+
+<h2>Day 17</h2>
+
+<div style="display:table-cell">
+    <textarea cols="141" rows="25" @bind="puzzleInput" />
+    <div align="right"><button @onclick="Run">Run</button></div>
+</div>
+
+<hr />
+<h3>Part 1:</h3>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+
+
+<script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.5.0"></script>
+<midi-player src="/media/hollyjol.mid" autoplay>
+</midi-player>
+
+@code
+{
+    int output1 = 0;
+    int output2 = 0;
+    string puzzleInput = "";
+
+    //A pathfinding problem. Time to implement Dijkstra's algorithm again
+    //Will part 2 be part 1 on a bigger map?
+    //Why is the map 141x141? Why not a round number? 141 is the product of two primes (3 * 47), does that mean anything?
+
+    void Run()
+    {
+
+    }
+}
