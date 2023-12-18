@@ -48,6 +48,7 @@
     string[] grid = [];
     PriorityQueue<PathNode, int> pathQueue = new PriorityQueue<PathNode, int>();
     Dictionary<int[], int> visited = new Dictionary<int[], int>();  //Wait, you can actually use an array as a key? It doesn't have to be an immutable type?
+    //Update: The compiler lets you use an array as a key, it just doesn't actually work. Need to revise. This Dictionary ends up full of duplicates, and I'm not sure lookups work.
 
     //A pathfinding problem. Time to implement Dijkstra's algorithm again
     //Because of the limitation on straight line distance, need to track visited locations in more detail
