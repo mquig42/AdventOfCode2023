@@ -46,9 +46,8 @@
     int[] DIRECTIONS = [-1000, 1, 1000, -1];
 
     string[] grid = [];
-    PriorityQueue<PathNode, int> pathQueue = new PriorityQueue<PathNode, int>();
-    Dictionary<int[], int> visited = new Dictionary<int[], int>();  //Wait, you can actually use an array as a key? It doesn't have to be an immutable type?
-    //Update: The compiler lets you use an array as a key, it just doesn't actually work. Need to revise. This Dictionary ends up full of duplicates, and I'm not sure lookups work.
+    PriorityQueue<(int, int, int), int> pathQueue = new PriorityQueue<(int, int, int), int>();
+    Dictionary<(int, int, int), int> visited = new Dictionary<(int, int, int), int>();
 
     //A pathfinding problem. Time to implement Dijkstra's algorithm again
     //Because of the limitation on straight line distance, need to track visited locations in more detail
@@ -59,14 +58,10 @@
     {
         grid = puzzleInput.Trim().Split('\n');
 
-        try
-        {
-            output1 = ShortestPath();
-        }
-        catch(Exception e)
-        {
-            output1 = -1;
-        }
+        pathQueue.Clear();
+        visited.Clear();
+        output1 = ShortestPath();
+        output2 = pathQueue.Count;
     }
 
     bool InBounds(int loc)
@@ -86,47 +81,36 @@
         if (!InBounds(loc))
             return;
 
-        if (currentWeight + Weight(loc) >= visited.GetValueOrDefault([loc, dir, steps], int.MaxValue))
+        (int, int, int) newNode = (loc, dir, steps);
+
+        if (currentWeight + Weight(loc) >= visited.GetValueOrDefault(newNode, int.MaxValue))
             return;
 
-        pathQueue.Enqueue(new PathNode(loc, dir, steps, currentWeight + Weight(loc)), currentWeight + Weight(loc));
+        visited[newNode] = currentWeight + Weight(loc);
+        pathQueue.Enqueue(newNode, currentWeight + Weight(loc));
     }
 
     int ShortestPath()
     {
-        PathNode current = new PathNode(0, EAST, 0, 0);
+        (int Location, int Direction, int StraightLineDistance) current = (0, EAST, 0);
+        visited[current] = 0;
+        int weight;
         int leftDirection, rightDirection;
 
-        while(current.Location != (grid.Length - 1) * 1000 + grid[0].Length - 1)
+        while (current.Location != (grid.Length - 1) * 1000 + grid[0].Length - 1)
         {
-            visited[[current.Location, current.Direction, current.StraightLineDistance]] = current.TotalWeight;
+            weight = visited[current];
             leftDirection = (current.Direction + 3) % 4;
             rightDirection = (current.Direction + 1) % 4;
 
-            EnqueueIfValid(current.Location + DIRECTIONS[leftDirection], leftDirection, 1, current.TotalWeight);
-            EnqueueIfValid(current.Location + DIRECTIONS[rightDirection], rightDirection, 1, current.TotalWeight);
+            EnqueueIfValid(current.Location + DIRECTIONS[leftDirection], leftDirection, 1, weight);
+            EnqueueIfValid(current.Location + DIRECTIONS[rightDirection], rightDirection, 1, weight);
             if (current.StraightLineDistance < 3)
-                EnqueueIfValid(current.Location + DIRECTIONS[current.Direction], current.Direction, current.StraightLineDistance + 1, current.TotalWeight);
+                EnqueueIfValid(current.Location + DIRECTIONS[current.Direction], current.Direction, current.StraightLineDistance + 1, weight);
 
             current = pathQueue.Dequeue();
         }
 
-        return current.TotalWeight;
-    }
-
-    private class PathNode
-    {
-        public int Location;
-        public int Direction;
-        public int StraightLineDistance;
-        public int TotalWeight;
-
-        public PathNode(int location, int direction, int straightlinedistance, int totalweight)
-        {
-            this.Location = location;
-            this.Direction = direction;
-            this.StraightLineDistance = straightlinedistance;
-            this.TotalWeight = totalweight;
-        }
+        return visited[current];
     }
 }
