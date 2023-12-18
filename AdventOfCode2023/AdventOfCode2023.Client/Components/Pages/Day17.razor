@@ -53,6 +53,7 @@
     //Because of the limitation on straight line distance, need to track visited locations in more detail
     //Will part 2 be part 1 on a bigger map?
     //Why is the map 141x141? Why not a round number? 141 is the product of two primes (3 * 47), does that mean anything?
+    //No, map is the same, just different rules on movement
 
     void Run()
     {
@@ -60,8 +61,11 @@
 
         pathQueue.Clear();
         visited.Clear();
-        output1 = ShortestPath();
-        output2 = pathQueue.Count;
+        output1 = ShortestPath1();
+
+        pathQueue.Clear();
+        visited.Clear();
+        output2 = ShortestPath2();
     }
 
     bool InBounds(int loc)
@@ -90,7 +94,8 @@
         pathQueue.Enqueue(newNode, currentWeight + Weight(loc));
     }
 
-    int ShortestPath()
+    //Part 1 solver
+    int ShortestPath1()
     {
         (int Location, int Direction, int StraightLineDistance) current = (0, EAST, 0);
         visited[current] = 0;
@@ -106,6 +111,37 @@
             EnqueueIfValid(current.Location + DIRECTIONS[leftDirection], leftDirection, 1, weight);
             EnqueueIfValid(current.Location + DIRECTIONS[rightDirection], rightDirection, 1, weight);
             if (current.StraightLineDistance < 3)
+                EnqueueIfValid(current.Location + DIRECTIONS[current.Direction], current.Direction, current.StraightLineDistance + 1, weight);
+
+            current = pathQueue.Dequeue();
+        }
+
+        return visited[current];
+    }
+
+    //Part 2 solver, based on part 1 but modified for different movement rules
+    int ShortestPath2()
+    {
+        //I need the EnqueueIfValid here, because you can move either East or South from the start point, but the rules don't allow turns before 4 spaces
+        //EnqueueIfValid adds the space's weight value to the given weight param, so I multiply it by -1 to ensure that a 0 gets inserted into visited.
+        (int Location, int Direction, int StraightLineDistance) current = (0, EAST, 0);
+        EnqueueIfValid(0, SOUTH, 0, -1 * Weight(0));
+        visited[current] = 0;
+        int weight;
+        int leftDirection, rightDirection;
+
+        while (current.Location != (grid.Length - 1) * 1000 + grid[0].Length - 1 || current.StraightLineDistance < 4)
+        {
+            weight = visited[current];
+            leftDirection = (current.Direction + 3) % 4;
+            rightDirection = (current.Direction + 1) % 4;
+
+            if (current.StraightLineDistance > 3)
+            {
+                EnqueueIfValid(current.Location + DIRECTIONS[leftDirection], leftDirection, 1, weight);
+                EnqueueIfValid(current.Location + DIRECTIONS[rightDirection], rightDirection, 1, weight);
+            }
+            if (current.StraightLineDistance < 10)
                 EnqueueIfValid(current.Location + DIRECTIONS[current.Direction], current.Direction, current.StraightLineDistance + 1, weight);
 
             current = pathQueue.Dequeue();
