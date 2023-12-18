@@ -39,12 +39,93 @@
     int output2 = 0;
     string puzzleInput = "";
 
+    const int NORTH = 0;
+    const int EAST = 1;
+    const int SOUTH = 2;
+    const int WEST = 3;
+    int[] DIRECTIONS = [-1000, 1, 1000, -1];
+
+    string[] grid = [];
+    PriorityQueue<PathNode, int> pathQueue = new PriorityQueue<PathNode, int>();
+    Dictionary<int[], int> visited = new Dictionary<int[], int>();  //Wait, you can actually use an array as a key? It doesn't have to be an immutable type?
+
     //A pathfinding problem. Time to implement Dijkstra's algorithm again
+    //Because of the limitation on straight line distance, need to track visited locations in more detail
     //Will part 2 be part 1 on a bigger map?
     //Why is the map 141x141? Why not a round number? 141 is the product of two primes (3 * 47), does that mean anything?
 
     void Run()
     {
+        grid = puzzleInput.Trim().Split('\n');
 
+        try
+        {
+            output1 = ShortestPath();
+        }
+        catch(Exception e)
+        {
+            output1 = -1;
+        }
+    }
+
+    bool InBounds(int loc)
+    {
+        return loc >= 0 && loc < grid.Length * 1000 && loc % 1000 < grid[0].Length;
+    }
+
+    int Weight(int loc)
+    {
+        return grid[loc / 1000][loc % 1000] - '0';
+    }
+
+    //Adds a new PathNode to pathQueue if it is valid
+    //Within the grid, and total weight would be less than any previous visits
+    void EnqueueIfValid(int loc, int dir, int steps, int currentWeight)
+    {
+        if (!InBounds(loc))
+            return;
+
+        if (currentWeight + Weight(loc) >= visited.GetValueOrDefault([loc, dir, steps], int.MaxValue))
+            return;
+
+        pathQueue.Enqueue(new PathNode(loc, dir, steps, currentWeight + Weight(loc)), currentWeight + Weight(loc));
+    }
+
+    int ShortestPath()
+    {
+        PathNode current = new PathNode(0, EAST, 0, 0);
+        int leftDirection, rightDirection;
+
+        while(current.Location != (grid.Length - 1) * 1000 + grid[0].Length - 1)
+        {
+            visited[[current.Location, current.Direction, current.StraightLineDistance]] = current.TotalWeight;
+            leftDirection = (current.Direction + 3) % 4;
+            rightDirection = (current.Direction + 1) % 4;
+
+            EnqueueIfValid(current.Location + DIRECTIONS[leftDirection], leftDirection, 1, current.TotalWeight);
+            EnqueueIfValid(current.Location + DIRECTIONS[rightDirection], rightDirection, 1, current.TotalWeight);
+            if (current.StraightLineDistance < 3)
+                EnqueueIfValid(current.Location + DIRECTIONS[current.Direction], current.Direction, current.StraightLineDistance + 1, current.TotalWeight);
+
+            current = pathQueue.Dequeue();
+        }
+
+        return current.TotalWeight;
+    }
+
+    private class PathNode
+    {
+        public int Location;
+        public int Direction;
+        public int StraightLineDistance;
+        public int TotalWeight;
+
+        public PathNode(int location, int direction, int straightlinedistance, int totalweight)
+        {
+            this.Location = location;
+            this.Direction = direction;
+            this.StraightLineDistance = straightlinedistance;
+            this.TotalWeight = totalweight;
+        }
     }
 }
