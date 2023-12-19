@@ -30,49 +30,64 @@
 
 @code
 {
-    int output1 = 0;
-    int output2 = 0;
+    long output1 = 0;
+    long output2 = 0;
     string puzzleInput = "";
 
     void Run()
     {
         string[] lines = puzzleInput.Trim().Split('\n');
-        output1 = Solve1(lines);
+        output1 = Solve(lines.Select(Decode1));
+        output2 = Solve(lines.Select(Decode2));
     }
 
-    //This is wrong. Find a better math reference.
-    int Solve1(string[] lines)
+    (char dir, int len) Decode1(string line)
     {
-        int area = 0;
-        int perimeter = 0;
-        char dir;
-        int length;
-        (int x, int y) pos = (0, 0);
-        (int x, int y) newPos;
+        return (line[0], int.Parse(line.Split(" ")[1]));
+    }
 
-        foreach(string line in lines)
+    (char dir, int len) Decode2(string line)
+    {
+        string hex = line.Split(" ")[2];
+        char d = 'U';
+
+        if (hex[7] == '0')
+            d = 'R';
+        else if (hex[7] == '1')
+            d = 'D';
+        else if (hex[7] == '2')
+            d = 'L';
+
+        return (d, Convert.ToInt32(hex.Substring(2, 5), 16));
+    }
+
+    long Solve(IEnumerable<(char dir, int len)> instructions)
+    {
+        long area = 0;
+        long perimeter = 0;
+        (long x, long y) pos = (0, 0);
+        (long x, long y) newPos;
+
+        foreach((char dir, int len) instruction in instructions)
         {
-            dir = line[0];
-            length = int.Parse(line.Split(" ")[1]);
-
-            switch (dir)
+            switch (instruction.dir)
             {
                 case 'U':
-                    newPos = (pos.x, pos.y - length);
+                    newPos = (pos.x, pos.y - instruction.len);
                     break;
                 case 'D':
-                    newPos = (pos.x, pos.y + length);
+                    newPos = (pos.x, pos.y + instruction.len);
                     break;
                 case 'L':
-                    newPos = (pos.x - length, pos.y);
+                    newPos = (pos.x - instruction.len, pos.y);
                     break;
                 default:
-                    newPos = (pos.x + length, pos.y);
+                    newPos = (pos.x + instruction.len, pos.y);
                     break;
             }
 
             area += (pos.x + newPos.x) * (pos.y - newPos.y);
-            perimeter += length;
+            perimeter += instruction.len;
             pos = newPos;
         }
 
