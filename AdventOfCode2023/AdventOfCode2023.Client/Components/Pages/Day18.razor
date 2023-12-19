@@ -36,6 +36,46 @@
 
     void Run()
     {
+        string[] lines = puzzleInput.Trim().Split('\n');
+        output1 = Solve1(lines);
+    }
 
+    //This is wrong. Find a better math reference.
+    int Solve1(string[] lines)
+    {
+        int area = 0;
+        int perimeter = 0;
+        char dir;
+        int length;
+        (int x, int y) pos = (0, 0);
+        (int x, int y) newPos;
+
+        foreach(string line in lines)
+        {
+            dir = line[0];
+            length = int.Parse(line.Split(" ")[1]);
+
+            switch (dir)
+            {
+                case 'U':
+                    newPos = (pos.x, pos.y - length);
+                    break;
+                case 'D':
+                    newPos = (pos.x, pos.y + length);
+                    break;
+                case 'L':
+                    newPos = (pos.x - length, pos.y);
+                    break;
+                default:
+                    newPos = (pos.x + length, pos.y);
+                    break;
+            }
+
+            area += (pos.x + newPos.x) * (pos.y - newPos.y);
+            perimeter += length;
+            pos = newPos;
+        }
+
+        return (Math.Abs(area) + perimeter) / 2 + 1;
     }
 }
