@@ -3,12 +3,11 @@
 
 <PageTitle>Day 18</PageTitle>
 
-@* <style>
+<style>
     body {
-        background-image: url(/media/background16.png);
-        color: darkblue;
+        background-color: green;
     }
-</style> *@
+</style>
 
 <h2>Day 18</h2>
 
@@ -17,7 +16,7 @@
     <div align="right"><button @onclick="Run">Run</button></div>
 </div>
 
-<hr />
+<div style="background-image:url(/media/workshop.gif); background-repeat:repeat-x; height:112px"></div>
 <h3>Part 1:</h3>
 <p>@output1</p>
 
@@ -27,6 +26,7 @@
 
 <hr />
 <h3>Notes</h3>
+<p>My solution is based on this: <a href="https://www.mathopenref.com/coordpolygonarea2.html">Area of a Polygon</a>. It was mentioned on the subreddit for day 10. I ended up using a different approach there, but came back to it today.</p>
 
 @code
 {
