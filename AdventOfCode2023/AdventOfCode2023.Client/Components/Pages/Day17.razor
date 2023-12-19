@@ -3,31 +3,45 @@
 
 <PageTitle>Day 17</PageTitle>
 
-@* <style>
+<style>
     body {
-        background-image: url(/media/background16.png);
-        color: darkblue;
+        background-image: url(/media/Trains.gif);
     }
-</style> *@
 
-<h2>Day 17</h2>
+    .box {
+        background-color: #FBE37A;
+        width: fit-content;
+        border-radius: 5px;
+        border: 2px solid #D6020B;
+        padding: 15px;
+    }
+</style>
+
+<div class="box">
+    <h2 style="margin-top:0px; margin-bottom:0px;">Day 17</h2>
+</div>
+<br />
 
 <div style="display:table-cell">
     <textarea cols="141" rows="25" @bind="puzzleInput" />
     <div align="right"><button @onclick="Run">Run</button></div>
 </div>
 
-<hr />
-<h3>Part 1:</h3>
-<p>@output1</p>
+<div class="box" style="float:left;">
+    <h3 style="margin-top:0px">Part 1:</h3>@output1
+</div>
+<div style="float:left; width:20px;"><p></p></div>
+<div class="box" style="float:left;">
+    <h3 style="margin-top:0px">Part 2:</h3>@output2
+</div>
+<p style="clear: both;"></p>
+<br />
 
-<hr />
-<h3>Part 2:</h3>
-<p>@output2</p>
-
-<hr />
-<h3>Notes</h3>
-
+<div class="box" style="width:75%;">
+    <h3 style="margin-top:0px">Notes</h3>
+    And here we have the pathfinding problem. I used a slight modification of Dijkstra's algorithm where each state includes a location, direction, and the distance travelled since the last turn.
+</div>
+<br />
 
 <script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.5.0"></script>
 <midi-player src="/media/hollyjol.mid" autoplay>
@@ -53,7 +67,7 @@
     //Because of the limitation on straight line distance, need to track visited locations in more detail
     //Will part 2 be part 1 on a bigger map?
     //Why is the map 141x141? Why not a round number? 141 is the product of two primes (3 * 47), does that mean anything?
-    //No, map is the same, just different rules on movement
+    //No, map is the same, just different rules on movement. No idea why it's 141x141 instead of 140x140.
 
     void Run()
     {
