@@ -1,0 +1,40 @@
+﻿@page "/Day19"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 19</PageTitle>
+
+@* <style>
+    body {
+        background-image: url(/media/background18.gif);
+    }
+</style> *@
+
+<h2>Day 19</h2>
+
+<div style="display:table-cell">
+    <textarea cols="80" rows="25" @bind="puzzleInput" />
+    <div align="right"><button @onclick="Run">Run</button></div>
+</div>
+
+<hr />
+<h3>Part 1:</h3>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+
+@code
+{
+    int output1 = 0;
+    int output2 = 0;
+    string puzzleInput = "";
+
+    void Run()
+    {
+        
+    }
+}
