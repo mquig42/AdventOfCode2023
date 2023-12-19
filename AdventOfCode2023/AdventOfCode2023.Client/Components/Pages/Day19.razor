@@ -1,5 +1,6 @@
 ﻿@page "/Day19"
 @rendermode InteractiveWebAssembly
+@using System.Text.RegularExpressions;
 
 <PageTitle>Day 19</PageTitle>
 
@@ -33,8 +34,82 @@
     int output2 = 0;
     string puzzleInput = "";
 
+    List<Dictionary<char, int>> parts = new List<Dictionary<char, int>>();
+    Dictionary<string, string[]> workflows = new Dictionary<string, string[]>();
+
     void Run()
     {
-        
+        parts.Clear();
+        workflows.Clear();
+        string[] lines = puzzleInput.Split('\n');
+        int i = 0;
+
+        while(lines[i]!="")
+        {
+            //Read workflows
+            workflows[Regex.Match(lines[i], @"^\w+").Value] = Regex.Match(lines[i], @"(?<={).*(?=})").Value.Split(',');
+            i++;
+        }
+        i++;
+        while (lines[i] != "")
+        {
+            //Read parts
+            parts.Add(ReadPart(lines[i]));
+            i++;
+        }
+
+        output1 = parts.Where(x => Validate(x, "in")).Select(SumPart).Sum();
+    }
+
+    Dictionary<char, int> ReadPart(string line)
+    {
+        Dictionary<char, int> part = new Dictionary<char, int>();
+        int[] values = Regex.Matches(line, @"\d+").Select(x => int.Parse(x.Value)).ToArray();
+        part['x'] = values[0];
+        part['m'] = values[1];
+        part['a'] = values[2];
+        part['s'] = values[3];
+        return part;
+    }
+
+    bool Validate(Dictionary<char, int> part, string workflowName)
+    {
+        string ruleResult;
+
+        foreach(string rule in workflows[workflowName])
+        {
+            ruleResult = ProcessRule(part, rule);
+
+            if (ruleResult == "A")
+                return true;
+            else if (ruleResult == "R")
+                return false;
+            else if (ruleResult != "")
+                return Validate(part, ruleResult);
+        }
+        return false;
+    }
+
+    string ProcessRule(Dictionary<char, int> part, string rule)
+    {
+        if (rule.Contains('<'))
+        {
+            if (part[rule[0]] < int.Parse(rule.Split(':')[0].Substring(2)))
+                return rule.Split(':')[1];
+            return "";
+        }
+        else if (rule.Contains('>'))
+        {
+            if (part[rule[0]] > int.Parse(rule.Split(':')[0].Substring(2)))
+                return rule.Split(':')[1];
+            return "";
+        }
+        else
+            return rule;
+    }
+
+    int SumPart(Dictionary<char, int> part)
+    {
+        return part['x'] + part['m'] + part['a'] + part['s'];
     }
 }
