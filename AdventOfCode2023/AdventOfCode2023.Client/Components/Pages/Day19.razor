@@ -31,8 +31,10 @@
 @code
 {
     int output1 = 0;
-    int output2 = 0;
+    long output2 = 0;
     string puzzleInput = "";
+
+    record Range(int start, int end);
 
     List<Dictionary<char, int>> parts = new List<Dictionary<char, int>>();
     Dictionary<string, string[]> workflows = new Dictionary<string, string[]>();
@@ -44,9 +46,10 @@
         string[] lines = puzzleInput.Split('\n');
         int i = 0;
 
+        //Parsing
         while(lines[i]!="")
         {
-            //Read workflows
+            //Read workflows. The first regex matches the group of letters at the beginning of the line, the second matches everything between { and }
             workflows[Regex.Match(lines[i], @"^\w+").Value] = Regex.Match(lines[i], @"(?<={).*(?=})").Value.Split(',');
             i++;
         }
@@ -58,9 +61,15 @@
             i++;
         }
 
+        //Part 1
         output1 = parts.Where(x => Validate(x, "in")).Select(SumPart).Sum();
+
+        //Part 2
+        Range[] space = [new Range(1, 4000), new Range(1, 4000), new Range(1, 4000), new Range(1, 4000)];
+        output2 = AcceptedVolume(space, "in");
     }
 
+    //Each Part is represented by a dictionary with 4 keys. Parse a line of input and create one of these dictionaries
     Dictionary<char, int> ReadPart(string line)
     {
         Dictionary<char, int> part = new Dictionary<char, int>();
@@ -72,6 +81,9 @@
         return part;
     }
 
+    //=====Part 1 Functions=====
+
+    //Validates a part using the given workflow. Will recurse to other workflows if required.
     bool Validate(Dictionary<char, int> part, string workflowName)
     {
         string ruleResult;
@@ -90,6 +102,8 @@
         return false;
     }
 
+    //Return the result of processing a single rule on part. This result could be A, R, or the name of a workflow
+    //If the rule contains a condition which is not true for the given part, returns an empty string. This instructs Validate to move on to the next rule in the workflow.
     string ProcessRule(Dictionary<char, int> part, string rule)
     {
         if (rule.Contains('<'))
@@ -111,5 +125,82 @@
     int SumPart(Dictionary<char, int> part)
     {
         return part['x'] + part['m'] + part['a'] + part['s'];
+    }
+
+    //=====Part 2 Functions=====
+
+    //Returns the total volume that will be accepted by the given workflow
+    //The algorithm is based on recursively dividing space, so start it with the full range of 1 to 4000 in every dimension and workflowName "in"
+    long AcceptedVolume(Range[] space, string workflowName)
+    {
+        long sum = 0;
+        Range[] localSpace = space;
+        Range[][] dividedSpace;
+
+        if (workflowName == "A")
+            return Volume(space);
+        else if (workflowName == "R")
+            return 0;
+        else
+        {
+            foreach (string rule in workflows[workflowName])
+            {
+                if (rule == "A")
+                    sum += Volume(localSpace);
+                else if (rule.Contains('<') || rule.Contains('>'))
+                {
+                    dividedSpace = DivideSpace(localSpace, rule);
+                    sum += AcceptedVolume(dividedSpace[0], rule.Split(':')[1]);
+                    localSpace = dividedSpace[1];
+                }
+                else if (rule != "R")
+                    sum += AcceptedVolume(localSpace, rule);
+            }
+        }
+
+        return sum;
+    }
+
+    //Returns two spaces. The first is the entire space where the condition in rule evaluates to true, the second is the entire space where it is false
+    Range[][] DivideSpace(Range[] space, string rule)
+    {
+        int dimension = Array.IndexOf(['x', 'm', 'a', 's'], rule[0]);
+        char comparison = rule[1];
+        int value = int.Parse(rule.Split(':')[0].Substring(2));
+        Range[] spaceIfTrue = new Range[4];
+        Range[] spaceIfFalse = new Range[4];
+
+        //First initialize the two return values equal to space. The appropriate dimension will be modified later.
+        for(int i=0;i<4;i++)
+        {
+            spaceIfTrue[i] = space[i];
+            spaceIfFalse[i] = space[i];
+        }
+
+        if(comparison=='<')
+        {
+            spaceIfTrue[dimension] = new Range(space[dimension].start, value - 1);
+            spaceIfFalse[dimension] = new Range(value, space[dimension].end);
+        }
+        else
+        {
+            spaceIfTrue[dimension] = new Range(value + 1, space[dimension].end);
+            spaceIfFalse[dimension] = new Range(space[dimension].start, value);
+        }
+
+        return [spaceIfTrue, spaceIfFalse];
+    }
+
+    //Calculate the total volume of the given space
+    long Volume(Range[] range)
+    {
+        long v = 1;
+
+        foreach(Range r in range)
+        {
+            v *= (r.end - r.start + 1);
+        }
+
+        return v;
     }
 }
