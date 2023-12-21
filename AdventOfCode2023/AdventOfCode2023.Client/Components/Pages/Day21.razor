@@ -1,0 +1,95 @@
+﻿@page "/Day21"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 21</PageTitle>
+
+@* <style>
+    body {
+        background-image: url(/media/background19.gif);
+        color: white;
+    }
+</style> *@
+
+<h2>Day 21</h2>
+
+<div style="display:table-cell">
+    <textarea cols="131" rows="25" @bind="puzzleInput" />
+    <div align="right"><button @onclick="Run">Run</button></div>
+</div>
+
+<hr />
+<h3>Part 1:</h3>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+<p>At first glance, this looks like a pathfinding problem. It may be possible to modify Dijkstra's algorithm to find the longest path to each point and look for the 64s, but solving part 1 is more straightforward if you treat it as a cellular automaton. Any cell that isn't a rock is active if any of the cells next to it were active in the previous round.</p>
+
+@code
+{
+    int output1 = 0;
+    int output2 = 0;
+    string puzzleInput = "";
+
+    record Point(int row, int col);
+
+    int maxRow = 0;
+    int maxCol = 0;
+    HashSet<Point> dests = new HashSet<Point>();
+    HashSet<Point> rocks = new HashSet<Point>();
+
+    void Run()
+    {
+        string[] lines = puzzleInput.Trim().Split('\n');
+
+        dests.Clear();
+        rocks.Clear();
+        maxRow = lines.Length - 1;
+        maxCol = lines[0].Length - 1;
+
+        for (int row = 0; row <= maxRow; row++)
+        {
+            for (int col = 0; col <= maxCol; col++)
+            {
+                if (lines[row][col] == '#')
+                {
+                    rocks.Add(new Point(row, col));
+                }
+                if (lines[row][col] == 'S')
+                {
+                    dests.Add(new Point(row, col));
+                }
+            }
+        }
+
+        for (int i = 0; i < 64; i++)
+            Step();
+
+        output1 = dests.Count;
+    }
+
+    void Step()
+    {
+        HashSet<Point> nextStep = new HashSet<Point>();
+
+        foreach(Point p in dests)
+        {
+            InsertIfValid(new Point(p.row - 1, p.col), nextStep);
+            InsertIfValid(new Point(p.row, p.col + 1), nextStep);
+            InsertIfValid(new Point(p.row + 1, p.col), nextStep);
+            InsertIfValid(new Point(p.row, p.col - 1), nextStep);
+        }
+
+        dests = nextStep;
+    }
+
+    void InsertIfValid(Point p, HashSet<Point> set)
+    {
+        if (p.row >= 0 && p.row <= maxRow && p.col >= 0 && p.col <= maxCol && !rocks.Contains(p))
+            set.Add(p);
+    }
+}
