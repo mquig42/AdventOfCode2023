@@ -1,0 +1,262 @@
+﻿@page "/Day20"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 20</PageTitle>
+
+<style>
+    body {
+        background-image: url(/media/background20.gif);
+    }
+</style>
+
+<h2>Day 20</h2>
+
+<div style="display:table-cell">
+    <textarea cols="80" rows="25" @bind="puzzleInput" />
+    <div align="right"><button @onclick="Run">Run</button></div>
+</div>
+
+<hr />
+<h3>Part 1:</h3>
+<p>@output1</p>
+
+<hr />
+<h3>Notes</h3>
+<p>To solve part 1, I wrote a simulation of the module network. This required a total of 8 classes, including an abstract <code>Module</code> class and four module types that inherit from it. Up until now I hadn't been using a lot of classes or any inheritance, but it seemed like the best way to model a complicated network like this.</p>
+<p>Part 2 was more manual. I examined the input to find rx is a destination for only one conjunction module, which has four other conjunction modules feeding into it. This means that all four of those modules must send a high pulse on the same button push for rx to receive a low pulse. I used the debugger to find out when each module sends a high pulse (all were after a 4 digit prime number of button pushes) and then multiplied those numbers to get my answer.</p>
+<p>Also, having to push the same button 241 trillion times to turn a machine on is just poor UI design.</p>
+
+@code
+{
+    long output1 = 0;
+    string puzzleInput = "";
+
+    void Run()
+    {
+        ModuleNetwork network = new ModuleNetwork(puzzleInput);
+
+        for (int i = 0; i < 1000; i++)
+        {
+            network.Poke();
+        }
+
+        output1 = network.PulseCount;
+    }
+
+    private class ModuleNetwork
+    {
+        private Dictionary<string, Module> modules = new Dictionary<string, Module>();
+        private PulseQueue pulseQueue = new PulseQueue();
+
+        public ModuleNetwork(string input)
+        {
+            string[] lines = input.Trim().Split('\n');
+
+            foreach (string line in lines)
+                AddModule(line);
+            foreach (string line in lines)
+                ConnectModule(line);
+        }
+
+        public long PulseCount
+        {
+            get { return pulseQueue.Count; }
+        }
+
+        //Read a line of input and create the Module it describes. Does not add connections
+        private void AddModule(string line)
+        {
+            string name = line.Split(' ')[0].Trim(['%', '&']);
+
+            if (line.StartsWith('%'))
+                modules[name] = new FlipFlopModule(name);
+            else if (line.StartsWith('&'))
+                modules[name] = new ConjunctionModule(name);
+            else
+                modules[name] = new BroadcastModule(name);
+        }
+
+        //Read a line of input and add the described connections between modules
+        private void ConnectModule(string line)
+        {
+            string name = line.Split(' ')[0].Trim(['%', '&']);
+            IEnumerable<string> dests = (line + ',').Split(' ').Where(x => x.EndsWith(',')).Select(x => x.Trim(','));
+
+            foreach (string dest in dests)
+            {
+                modules[name].AddDestination(dest);
+
+                if (modules.ContainsKey(dest))
+                    modules[dest].AddOrigin(name);
+                else
+                    modules[dest] = new OutputModule(dest);
+            }
+        }
+
+        //Push the button, Max!
+        public void Poke()
+        {
+            Pulse p;
+
+            pulseQueue.Enqueue(new Pulse("button", "broadcaster", false));
+
+            while (pulseQueue.ContainsPulses)
+            {
+                p = pulseQueue.Dequeue();
+                modules[p.Destination].ProcessPulse(p, pulseQueue);
+            }
+        }
+    }
+
+    private abstract class Module
+    {
+        protected List<string> dests = new List<string>();
+        protected string myName;
+
+        public Module(string name)
+        {
+            myName = name;
+        }
+
+        public abstract void ProcessPulse(Pulse pulse, PulseQueue pulseQueue);
+        public abstract void AddOrigin(string name);
+
+        public void AddDestination(string name)
+        {
+            dests.Add(name);
+        }
+    }
+
+    private class FlipFlopModule : Module
+    {
+        private bool state = false;
+
+        public FlipFlopModule(string name) : base(name) { }
+
+        //Flip flop modules don't care where a pulse originates from
+        public override void AddOrigin(string name) { }
+
+        public override void ProcessPulse(Pulse pulse, PulseQueue pulseQueue)
+        {
+            if (!pulse.Value)
+            {
+                state = !state;
+                foreach (string dest in dests)
+                {
+                    pulseQueue.Enqueue(new Pulse(myName, dest, state));
+                }
+            }
+        }
+    }
+
+    private class ConjunctionModule : Module
+    {
+        private Dictionary<string, bool> origins = new Dictionary<string, bool>();
+
+        public ConjunctionModule(string name) : base(name) { }
+
+        public override void AddOrigin(string name)
+        {
+            origins[name] = false;
+        }
+
+        public override void ProcessPulse(Pulse pulse, PulseQueue pulseQueue)
+        {
+            origins[pulse.Origin] = pulse.Value;
+            bool allHigh = true;
+
+            foreach (bool b in origins.Values)
+                if (!b)
+                    allHigh = false;
+
+            foreach (string dest in dests)
+            {
+                pulseQueue.Enqueue(new Pulse(myName, dest, !allHigh));
+            }
+        }
+    }
+
+    private class BroadcastModule : Module
+    {
+        public BroadcastModule(string name) : base(name) { }
+
+        public override void AddOrigin(string name) { }
+
+        public override void ProcessPulse(Pulse pulse, PulseQueue pulseQueue)
+        {
+            foreach (string dest in dests)
+            {
+                pulseQueue.Enqueue(new Pulse(myName, dest, false));
+            }
+        }
+    }
+
+    //This module type does nothing. It's used when something not in the modules list appears as a destination
+    private class OutputModule : Module
+    {
+        public OutputModule(string name) : base(name) { }
+
+        public override void AddOrigin(string name) { }
+        public override void ProcessPulse(Pulse pulse, PulseQueue pulseQueue) { }
+    }
+
+    private class Pulse
+    {
+        string o, d;
+        bool v;
+
+        public string Origin
+        {
+            get { return o; }
+        }
+
+        public string Destination
+        {
+            get { return d; }
+        }
+
+        public bool Value
+        {
+            get { return v; }
+        }
+
+        public Pulse(string origin, string destination, bool value)
+        {
+            o = origin;
+            d = destination;
+            v = value;
+        }
+    }
+
+    //Wraps the built-in Queue class, keeps an internal count of all high and low pulses
+    private class PulseQueue
+    {
+        private Queue<Pulse> pq = new Queue<Pulse>();
+        private long lowCount = 0;
+        private long highCount = 0;
+
+        public long Count
+        {
+            get { return lowCount * highCount; }
+        }
+
+        public bool ContainsPulses
+        {
+            get { return pq.Count != 0; }
+        }
+
+        public void Enqueue(Pulse pulse)
+        {
+            if (pulse.Value)
+                highCount++;
+            else
+                lowCount++;
+            pq.Enqueue(pulse);
+        }
+
+        public Pulse Dequeue()
+        {
+            return pq.Dequeue();
+        }
+    }
+}
