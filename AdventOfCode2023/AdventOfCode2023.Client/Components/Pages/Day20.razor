@@ -200,33 +200,7 @@
         public override void ProcessPulse(Pulse pulse, PulseQueue pulseQueue) { }
     }
 
-    private class Pulse
-    {
-        string o, d;
-        bool v;
-
-        public string Origin
-        {
-            get { return o; }
-        }
-
-        public string Destination
-        {
-            get { return d; }
-        }
-
-        public bool Value
-        {
-            get { return v; }
-        }
-
-        public Pulse(string origin, string destination, bool value)
-        {
-            o = origin;
-            d = destination;
-            v = value;
-        }
-    }
+    record Pulse(string Origin, string Destination, bool Value);
 
     //Wraps the built-in Queue class, keeps an internal count of all high and low pulses
     private class PulseQueue
