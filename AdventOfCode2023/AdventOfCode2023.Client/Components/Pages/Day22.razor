@@ -36,8 +36,6 @@
     int output2 = 0;
     string puzzleInput = "";
 
-    List<Brick> bricks = new List<Brick>();
-
     //Every brick is a number of cubes in a straight line. This line can point along any axis, including vertical.
     //Need to simulate falling bricks. I don't want to compare every brick to every other brick, as that would be O(n^2)
     //So I need to sort them somehow. Maybe a priority queue? Start with the lowest bricks and go up. Each brick drops by 1 if all spaces below it are clear.
@@ -54,53 +52,61 @@
     void Run()
     {
         string[] lines = puzzleInput.Trim().Split('\n');
+        List<Brick> bricks = new List<Brick>();
 
-        bricks.Clear();
-        foreach(string line in lines)
+        foreach (string line in lines)
         {
             bricks.Add(new Brick(line));
         }
 
         bricks.Sort();
-        Drop();
-        output1 = solve1();
+        Drop(bricks);
+
+        List<string> supportingBricks = solve1(bricks);
+        output1 = bricks.Count - supportingBricks.Count;
+
+        //Inefficient way of solving part 2. Try removing each brick identified in part 1 and rerun the Drop simulation
+        bricks.Sort();
+        List<Brick> bricksCopy = new List<Brick>();
+        int counter = 0;
+        foreach (string brickName in supportingBricks)
+        {
+            bricksCopy.Clear();
+            for (int i = 0; i < bricks.Count; i++)
+            {
+                if (bricks[i].name != brickName)
+                {
+                    bricksCopy.Add(new Brick(bricks[i]));
+                }
+            }
+            counter += Drop(bricksCopy);
+        }
+
+        output2 = counter;
     }
 
     //Bricks start in midair. Reposition each brick to as far down as it can fall
-    void Drop()
+    //Returns the number of bricks that changed position
+    int Drop(List<Brick> bricks)
     {
         //All X and Y values are between 0 and 9, so init a 10x10 heightmap.
         int[][] heightMap = new int[10][];
         for (int i = 0; i < 10; i++)
             heightMap[i] = new int[10];
 
+        int counter = 0;
+
         for(int i=0;i<bricks.Count;i++)
         {
-            int maxHeight = 0;
-            foreach (Point p in bricks[i].points)
-                if (heightMap[p.x][p.y] > maxHeight)
-                    maxHeight = heightMap[p.x][p.y];
-
-            if(bricks[i].vertical)
-            {
-                int z;
-                for (z = 0; z < bricks[i].points.Count; z++)
-                    bricks[i].points[z].z = z + maxHeight + 1;
-
-                heightMap[bricks[i].points[0].x][bricks[i].points[0].y] = z + maxHeight;
-            }
-            else
-            {
-                for(int p = 0; p < bricks[i].points.Count; p++)
-                {
-                    bricks[i].points[p].z = maxHeight + 1;
-                    heightMap[bricks[i].points[p].x][bricks[i].points[p].y] = maxHeight + 1;
-                }
-            }
+            if (bricks[i].Drop(heightMap))
+                counter++;
         }
+
+        return counter;
     }
 
-    int solve1()
+    //Find solution to part 1
+    List<string> solve1(List<Brick> bricks)
     {
         Dictionary<(int, int, int), string> brickLocations = new Dictionary<(int, int, int), string>();
         foreach(Brick b in bricks)
@@ -127,9 +133,10 @@
                 immovableBricks.Add(supportingBricks.First());
         }
 
-        return bricks.Count - immovableBricks.Count;
+        return immovableBricks.ToList();
     }
 
+    //Simple container for integer x, y, and z values
     private class Point
     {
         public int x;
@@ -144,6 +151,7 @@
         }
     }
 
+    //Represents a brick. I'm using the original input line as the name, since bricks need a unique ID
     private class Brick : IComparable
     {
         public List<Point> points;
@@ -164,9 +172,14 @@
                         points.Add(new Point(x, y, z));
         }
 
-        public int Volume()
+        public Brick(Brick b)
         {
-            return points.Count;
+            points = new List<Point>();
+            foreach (Point p in b.points)
+                points.Add(new Point(p.x, p.y, p.z));
+
+            vertical = b.vertical;
+            name = b.name;
         }
 
         //Return lowest x value of this brick's points
@@ -181,18 +194,6 @@
             return a;
         }
 
-        //Return highest x value of this brick's points
-        public int MaxHeight()
-        {
-            int a = 0;
-
-            foreach (Point p in points)
-                if (p.z > a)
-                    a = p.z;
-
-            return a;
-        }
-
         public int CompareTo(object? obj)
         {
             if (obj == null) return 1;
@@ -200,8 +201,38 @@
             Brick? otherBrick = obj as Brick;
             if (otherBrick != null)
                 return this.Altitude().CompareTo(otherBrick.Altitude());
-            
+
             return 1;
+        }
+
+        //Drops the brick to the lowest level permitted by heightMap
+        //Updates heightMap. Returns true if brick's position has changed.
+        public bool Drop(int[][] heightMap)
+        {
+            int alt = Altitude();
+            int maxHeight = 0;
+            foreach (Point p in points)
+                if (heightMap[p.x][p.y] > maxHeight)
+                    maxHeight = heightMap[p.x][p.y];
+
+            if (vertical)
+            {
+                int z;
+                for (z = 0; z < points.Count; z++)
+                    points[z].z = z + maxHeight + 1;
+
+                heightMap[points[0].x][points[0].y] = z + maxHeight;
+            }
+            else
+            {
+                for (int p = 0; p < points.Count; p++)
+                {
+                    points[p].z = maxHeight + 1;
+                    heightMap[points[p].x][points[p].y] = maxHeight + 1;
+                }
+            }
+
+            return alt != maxHeight + 1;
         }
     }
 }
