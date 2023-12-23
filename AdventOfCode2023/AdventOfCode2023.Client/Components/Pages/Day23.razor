@@ -1,0 +1,45 @@
+﻿@page "/Day23"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 23</PageTitle>
+
+@* <style>
+    body {
+        background-image: url(/media/background22.gif);
+        color: white;
+    }
+</style> *@
+
+<h2>Day 23</h2>
+
+<div style="display:table-cell">
+    <textarea cols="141" rows="25" @bind="puzzleInput" />
+    <div align="right"><button @onclick="Run">Run</button></div>
+</div>
+
+<hr />
+<h3>Part 1:</h3>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+
+
+@code
+{
+    int output1 = 0;
+    int output2 = 0;
+    string puzzleInput = "";
+
+    //Variation on pathfinding. Find the longest route from start to end (without visiting the same location twice)
+    //Question: Is it possible to represent my input as a DAG, or is it more complicated than that?
+
+    void Run()
+    {
+
+    }
+}
