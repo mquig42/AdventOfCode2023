@@ -48,11 +48,19 @@
         ImmutableHashSet<Point> visited = ImmutableHashSet.Create(new Point(0, 1));
 
         output1 = LongestPath(lines, new Point(0, 1), 0, visited);
+        return;
 
         for (int i = 0; i < lines.Length; i++)
             lines[i] = lines[i].Replace('>', '.').Replace('v', '.').Replace('<', '.').Replace('^', '.');
 
-        output2 = LongestPath(lines, new Point(0, 1), 0, visited);
+        try
+        {
+            output2 = LongestPath(lines, new Point(0, 1), 0, visited);
+        }
+        catch(Exception e)
+        {
+            output2 = -1;
+        }
     }
 
     //Depth first search using ImmutableHashSet to track visited points
@@ -62,18 +70,12 @@
         if (from.row == map.Length - 1)
             return steps;
 
-        IEnumerable<Point> nextSteps = Dests(map, from);
-        int maxSteps = 0;
-        int s;
-        foreach(Point ns in nextSteps)
-        {
-            if(!visited.Contains(ns))
-            {
-                s = LongestPath(map, ns, steps + 1, visited.Add(ns));
-                maxSteps = Math.Max(s, maxSteps);
-            }
-        }
-        return maxSteps;
+        IEnumerable<Point> dests = Dests(map, from).Where(x => !visited.Contains(x));
+        if (dests.Count() == 0)
+            return 0;
+        if (dests.Count() == 1)
+            return LongestPath(map, dests.First(), steps + 1, visited.Add(dests.First()));
+        return dests.Select(x => LongestPath(map, x, steps + 1, visited.Add(x))).Max();
     }
 
     IEnumerable<Point> Dests(string[] map, Point p)
