@@ -1,5 +1,6 @@
 ﻿@page "/Day23"
 @rendermode InteractiveWebAssembly
+@using System.Collections.Immutable
 
 <PageTitle>Day 23</PageTitle>
 
@@ -35,11 +36,101 @@
     int output2 = 0;
     string puzzleInput = "";
 
+    record Point(int row, int col);
+
     //Variation on pathfinding. Find the longest route from start to end (without visiting the same location twice)
     //Question: Is it possible to represent my input as a DAG, or is it more complicated than that?
+    //Based on some visualizations I saw on the subreddit, it's not a DAG.
 
     void Run()
     {
+        string[] lines = puzzleInput.Trim().Split('\n');
+        ImmutableHashSet<Point> visited = ImmutableHashSet.Create(new Point(0, 1));
 
+        output1 = LongestPath(lines, new Point(0, 1), 0, visited);
+
+        for (int i = 0; i < lines.Length; i++)
+            lines[i] = lines[i].Replace('>', '.').Replace('v', '.').Replace('<', '.').Replace('^', '.');
+
+        output2 = LongestPath(lines, new Point(0, 1), 0, visited);
+    }
+
+    //Depth first search using ImmutableHashSet to track visited points
+    int LongestPath(string[] map, Point from, int steps, ImmutableHashSet<Point> visited)
+    {
+        //We have arrived at our destination
+        if (from.row == map.Length - 1)
+            return steps;
+
+        IEnumerable<Point> nextSteps = Dests(map, from);
+        int maxSteps = 0;
+        int s;
+        foreach(Point ns in nextSteps)
+        {
+            if(!visited.Contains(ns))
+            {
+                s = LongestPath(map, ns, steps + 1, visited.Add(ns));
+                maxSteps = Math.Max(s, maxSteps);
+            }
+        }
+        return maxSteps;
+    }
+
+    IEnumerable<Point> Dests(string[] map, Point p)
+    {
+        List<Point> dests = new List<Point>();
+
+        switch (map[p.row][p.col])
+        {
+            case '>':
+                dests.Add(new Point(p.row, p.col + 1));
+                break;
+            case 'v':
+                dests.Add(new Point(p.row + 1, p.col));
+                break;
+            case '<':
+                dests.Add(new Point(p.row, p.col - 1));
+                break;
+            case '^':
+                dests.Add(new Point(p.row - 1, p.col));
+                break;
+            default:
+                if (Valid(map, p.row, p.col + 1, 'E'))
+                    dests.Add(new Point(p.row, p.col + 1));
+                if (Valid(map, p.row + 1, p.col, 'S'))
+                    dests.Add(new Point(p.row + 1, p.col));
+                if (Valid(map, p.row, p.col - 1, 'W'))
+                    dests.Add(new Point(p.row, p.col - 1));
+                if (Valid(map, p.row - 1, p.col, 'N'))
+                    dests.Add(new Point(p.row - 1, p.col));
+                break;
+        }
+
+        return dests;
+    }
+
+    //Checks if a given location is within bounds, not #, and not uphill
+    bool Valid(string[] map, int row, int col, char dir)
+    {
+        if (row < 0 || col < 0 || row >= map.Length || col >= map[0].Length)
+            return false;
+
+        switch (map[row][col])
+        {
+            case '#':
+                return false;
+            case '.':
+                return true;
+            case '>':
+                return dir == 'E';
+            case 'v':
+                return dir == 'S';
+            case '<':
+                return dir == 'W';
+            case '^':
+                return dir == 'N';
+            default:
+                return false;
+        }
     }
 }
