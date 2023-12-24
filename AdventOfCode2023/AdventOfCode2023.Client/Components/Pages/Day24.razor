@@ -35,19 +35,31 @@
     int output2 = 0;
     string puzzleInput = "";
 
+    //Input contains 300 particles. That means there are nCr(300, 2) = 44850 pairs.
+    //I should be able to come up with a formula that evaluates each pair in constant time.
+
     void Run()
     {
         Hailstone[] hailstones = puzzleInput.Trim().Split('\n').Select(x => new Hailstone(x)).ToArray();
 
+        int counter = 0;
+        for (int i = 0; i < hailstones.Length - 1; i++)
+        {
+            for (int j = i + 1; j < hailstones.Length; j++)
+            {
+                counter++;
+            }
+        }
+        output1 = counter;
     }
 
     private class Hailstone
     {
-        private int x, y, z, dx, dy, dz;
+        private long x, y, z, dx, dy, dz;
 
         public Hailstone(string line)
         {
-            int[] values = line.Replace(" @", ",").Split(',').Select(int.Parse).ToArray();
+            long[] values = line.Replace(" @", ",").Split(',').Select(long.Parse).ToArray();
             x = values[0];
             y = values[1];
             z = values[2];
@@ -58,7 +70,7 @@
     }
 
     //Finds the intersection point of two hailstones, ignoring the z axis. Returns (0, 0) if they do not intersect.
-    (int x, int y) Intersect(Hailstone other)
+    (long x, long y) Intersect(Hailstone other)
     {
         return (0, 0);
     }
