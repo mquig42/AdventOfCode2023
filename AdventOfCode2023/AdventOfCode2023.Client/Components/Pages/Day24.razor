@@ -37,17 +37,23 @@
 
     //Input contains 300 particles. That means there are nCr(300, 2) = 44850 pairs.
     //I should be able to come up with a formula that evaluates each pair in constant time.
+    //Second part is more difficult. Should be doable with math, but it's more advanced than y = m*x + b
 
     void Run()
     {
         Hailstone[] hailstones = puzzleInput.Trim().Split('\n').Select(x => new Hailstone(x)).ToArray();
 
         int counter = 0;
+        long loBound = 200000000000000;
+        long hibound = 400000000000000;
+        (decimal x, decimal y) intersect;
         for (int i = 0; i < hailstones.Length - 1; i++)
         {
             for (int j = i + 1; j < hailstones.Length; j++)
             {
-                counter++;
+                intersect = hailstones[i].Intersect(hailstones[j]);
+                if (intersect.x >= loBound && intersect.x <= hibound && intersect.y >= loBound && intersect.y <= hibound)
+                    counter++;
             }
         }
         output1 = counter;
@@ -67,11 +73,27 @@
             dy = values[4];
             dz = values[5];
         }
-    }
 
-    //Finds the intersection point of two hailstones, ignoring the z axis. Returns (0, 0) if they do not intersect.
-    (long x, long y) Intersect(Hailstone other)
-    {
-        return (0, 0);
+        //Finds the intersection point of two hailstones, ignoring the z axis. Returns (0, 0) if they do not intersect.
+        public (decimal x, decimal y) Intersect(Hailstone other)
+        {
+            decimal m1 = (decimal)dy / dx;
+            decimal m2 = (decimal)other.dy / other.dx;
+
+            //Parallel lines do not intersect
+            if (m1 == m2)
+                return (0, 0);
+
+            decimal b1 = y - m1 * x;
+            decimal b2 = other.y - m2 * other.x;
+            decimal intersectX = (b2 - b1) / (m1 - m2);
+            decimal intersectY = m1 * intersectX + b1;
+
+            //Filter out any intersection points in the past
+            if (intersectX > x && dx < 0 || intersectX < x && dx > 0 || intersectX > other.x && other.dx < 0 || intersectX < other.x && other.dx > 0)
+                return (0, 0);
+
+            return (intersectX, intersectY);
+        }
     }
 }
