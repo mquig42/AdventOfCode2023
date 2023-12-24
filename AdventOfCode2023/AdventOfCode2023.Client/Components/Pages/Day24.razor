@@ -1,0 +1,65 @@
+﻿@page "/Day24"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 24</PageTitle>
+
+@* <style>
+    body {
+        background-image: url(/media/background22.gif);
+        color: white;
+    }
+</style> *@
+
+<h2>Day 24</h2>
+
+<div style="display:table-cell">
+    <textarea cols="80" rows="25" @bind="puzzleInput" />
+    <div align="right"><button @onclick="Run">Run</button></div>
+</div>
+
+<hr />
+<h3>Part 1:</h3>
+<p>@output1</p>
+
+<hr />
+<h3>Part 2:</h3>
+<p>@output2</p>
+
+<hr />
+<h3>Notes</h3>
+
+
+@code
+{
+    int output1 = 0;
+    int output2 = 0;
+    string puzzleInput = "";
+
+    void Run()
+    {
+        Hailstone[] hailstones = puzzleInput.Trim().Split('\n').Select(x => new Hailstone(x)).ToArray();
+
+    }
+
+    private class Hailstone
+    {
+        private int x, y, z, dx, dy, dz;
+
+        public Hailstone(string line)
+        {
+            int[] values = line.Replace(" @", ",").Split(',').Select(int.Parse).ToArray();
+            x = values[0];
+            y = values[1];
+            z = values[2];
+            dx = values[3];
+            dy = values[4];
+            dz = values[5];
+        }
+    }
+
+    //Finds the intersection point of two hailstones, ignoring the z axis. Returns (0, 0) if they do not intersect.
+    (int x, int y) Intersect(Hailstone other)
+    {
+        return (0, 0);
+    }
+}
