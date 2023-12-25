@@ -28,7 +28,9 @@
 
 <hr />
 <h3>Notes</h3>
-
+<p>Interesting problem, and according to <a href="https://en.wikipedia.org/wiki/Longest_path_problem">Wikipedia</a> it's NP-complete. It can be solved with a depth-first search, but only for small inputs.</p>
+<p>My original solution worked directly from the puzzle input, basically treating it as a graph where every . is a node and every edge length is 1. This solves part 1 in seconds, and part 2 of the sample input even faster.</p>
+<p>It was, however, too slow for part 2. I decided to speed it up by building a smaller graph where the only nodes are the start, end, and any points where multiple paths intersect. The edge length is the number of steps between each node. This takes about 30 seconds to solve my full input when I run it as a command line app, but might still be too much for WebAssembly.</p>
 
 @code
 {
@@ -38,6 +40,8 @@
 
     record Point(int row, int col);
 
+    Dictionary<Point, Dictionary<Point, int>> graph = new Dictionary<Point, Dictionary<Point, int>>();
+
     //Variation on pathfinding. Find the longest route from start to end (without visiting the same location twice)
     //Question: Is it possible to represent my input as a DAG, or is it more complicated than that?
     //Based on some visualizations I saw on the subreddit, it's not a DAG.
@@ -45,22 +49,38 @@
     void Run()
     {
         string[] lines = puzzleInput.Trim().Split('\n');
-        ImmutableHashSet<Point> visited = ImmutableHashSet.Create(new Point(0, 1));
+        Point start = new Point(0, 1);
 
-        output1 = LongestPath(lines, new Point(0, 1), 0, visited);
-        return;
+        output1 = LongestPath(lines, start, 0, ImmutableHashSet.Create(start));
 
         for (int i = 0; i < lines.Length; i++)
             lines[i] = lines[i].Replace('>', '.').Replace('v', '.').Replace('<', '.').Replace('^', '.');
 
-        try
+        //The maze is too big to solve part 2 directly. Need to generate a simplified graph.
+        //First find all the nodes. These are the start, end, and any path intersections.
+        graph.Clear();
+        graph[start] = new Dictionary<Point, int>();
+        for (int row = 0; row < lines.Length; row++)
         {
-            output2 = LongestPath(lines, new Point(0, 1), 0, visited);
+            for (int col = 0; col < lines[0].Length; col++)
+            {
+                if (lines[row][col] == '.' && Dests(lines, new Point(row, col)).Count() > 2)
+                    graph[new Point(row, col)] = new Dictionary<Point, int>();
+            }
         }
-        catch(Exception e)
+        for(int col=0;col<lines[0].Length;col++)
         {
-            output2 = -1;
+            if (lines[lines.Length - 1][col] == '.')
+                graph[new Point(lines.Length - 1, col)] = new Dictionary<Point, int>();
         }
+
+        //Now add edges and lengths
+        foreach(Point p in graph.Keys)
+        {
+            ConnectNodes(lines, p, p, 0, ImmutableHashSet.Create(p));
+        }
+
+        output2 = LongestPath2(lines, start, 0, ImmutableHashSet.Create(start));
     }
 
     //Depth first search using ImmutableHashSet to track visited points
@@ -76,6 +96,30 @@
         if (dests.Count() == 1)
             return LongestPath(map, dests.First(), steps + 1, visited.Add(dests.First()));
         return dests.Select(x => LongestPath(map, x, steps + 1, visited.Add(x))).Max();
+    }
+
+    //This is the same algorithm as LongestPath, just using the graph instead of working directly from the puzzle input
+    //The only other change I made was to replace the LINQ from the last line with a loop to try and improve performance
+    int LongestPath2(string[] map, Point from, int steps, ImmutableHashSet<Point> visited)
+    {
+        //We have arrived at our destination
+        if (from.row == map.Length - 1)
+            return steps;
+
+        IEnumerable<Point> dests = graph[from].Keys.Where(x => !visited.Contains(x));
+        if (dests.Count() == 0)
+            return 0;
+        if (dests.Count() == 1)
+            return LongestPath2(map, dests.First(), steps + graph[from][dests.First()], visited.Add(dests.First()));
+
+        int pathLen = 0;
+        int maxLen = 0;
+        foreach(Point p in dests)
+        {
+            pathLen = LongestPath2(map, p, steps + graph[from][p], visited.Add(p));
+            maxLen = Math.Max(maxLen, pathLen);
+        }
+        return maxLen;
     }
 
     IEnumerable<Point> Dests(string[] map, Point p)
@@ -133,6 +177,30 @@
                 return dir == 'N';
             default:
                 return false;
+        }
+    }
+
+    void ConnectNodes(string[] map, Point startNode, Point from, int steps, ImmutableHashSet<Point> visited)
+    {
+        IEnumerable<Point> dests = Dests(map, from).Where(x => !visited.Contains(x));
+
+        if (dests.Count() == 0)
+            return;
+        else if(steps==0)
+        {
+            foreach(Point d in dests)
+            {
+                ConnectNodes(map, startNode, d, 1, visited.Add(d));
+            }
+        }
+        else if (dests.Count() == 1)
+        {
+            ConnectNodes(map, startNode, dests.First(), steps + 1, visited.Add(dests.First()));
+        }
+        else
+        {
+            graph[startNode][from] = steps;
+            graph[from][startNode] = steps;
         }
     }
 }
