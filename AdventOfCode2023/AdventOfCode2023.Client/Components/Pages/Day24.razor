@@ -1,14 +1,15 @@
 ﻿@page "/Day24"
 @rendermode InteractiveWebAssembly
+@using MathNet.Numerics.LinearAlgebra;
+@using MathNet.Numerics.LinearAlgebra.Double;
 
 <PageTitle>Day 24</PageTitle>
 
-@* <style>
+<style>
     body {
-        background-image: url(/media/background22.gif);
-        color: white;
+        background-image: url(/media/background24.jpg);
     }
-</style> *@
+</style>
 
 <h2>Day 24</h2>
 
@@ -27,12 +28,12 @@
 
 <hr />
 <h3>Notes</h3>
-<p>Trying to rebase...</p>
+<p>Part 1 was easy, but part 2 took me a while. Needed to find a way to turn the input into a system of linear equations I could solve.</p>
 
 @code
 {
     int output1 = 0;
-    int output2 = 0;
+    long output2 = 0;
     string puzzleInput = "";
 
     //Input contains 300 particles. That means there are nCr(300, 2) = 44850 pairs.
@@ -56,12 +57,80 @@
                     counter++;
             }
         }
+
         output1 = counter;
+
+        output2 = Solve2(hailstones);
+    }
+
+    long Solve2(Hailstone[] hailstones)
+    {
+        double[][] xyArr = new double[4][];
+        xyArr[0] = MatrixRowXY(hailstones[0], hailstones[1]);
+        xyArr[1] = MatrixRowXY(hailstones[0], hailstones[2]);
+        xyArr[2] = MatrixRowXY(hailstones[0], hailstones[3]);
+        xyArr[3] = MatrixRowXY(hailstones[0], hailstones[4]);
+
+        double[] xyrArr = new double[4];
+        xyrArr[0] = MatrixRowRXY(hailstones[0], hailstones[1]);
+        xyrArr[1] = MatrixRowRXY(hailstones[0], hailstones[2]);
+        xyrArr[2] = MatrixRowRXY(hailstones[0], hailstones[3]);
+        xyrArr[3] = MatrixRowRXY(hailstones[0], hailstones[4]);
+
+        Matrix<double> xyMat = Matrix<double>.Build.DenseOfRowArrays(xyArr);
+        Vector<double> xyVec = Vector<double>.Build.Dense(xyrArr);
+
+        Vector<double> xySols = xyMat.Solve(xyVec);
+
+        double[][] xzArr = new double[4][];
+        xzArr[0] = MatrixRowXZ(hailstones[0], hailstones[1]);
+        xzArr[1] = MatrixRowXZ(hailstones[0], hailstones[2]);
+        xzArr[2] = MatrixRowXZ(hailstones[0], hailstones[3]);
+        xzArr[3] = MatrixRowXZ(hailstones[0], hailstones[4]);
+
+        double[] xzrArr = new double[4];
+        xzrArr[0] = MatrixRowRXZ(hailstones[0], hailstones[1]);
+        xzrArr[1] = MatrixRowRXZ(hailstones[0], hailstones[2]);
+        xzrArr[2] = MatrixRowRXZ(hailstones[0], hailstones[3]);
+        xzrArr[3] = MatrixRowRXZ(hailstones[0], hailstones[4]);
+
+        Matrix<double> xzMat = Matrix<double>.Build.DenseOfRowArrays(xzArr);
+        Vector<double> xzVec = Vector<double>.Build.Dense(xzrArr);
+
+        Vector<double> xzSols = xzMat.Solve(xzVec);
+
+        long x = (long)Math.Round(xySols[0]);
+        long y = (long)Math.Round(xySols[1]);
+        long z = (long)Math.Round(xzSols[1]);
+
+        return x + y + z;
+    }
+
+    //Equations based on https://www.reddit.com/r/adventofcode/comments/18q40he/2023_day_24_part_2_a_straightforward_nonsolver
+    //though I did re-derive everything myself
+    double[] MatrixRowXY(Hailstone h1, Hailstone h2)
+    {
+        return [h2.dy - h1.dy, h1.dx - h2.dx, h1.y - h2.y, h2.x - h1.x];
+    }
+
+    double MatrixRowRXY(Hailstone h1, Hailstone h2)
+    {
+        return h2.x * h2.dy - h2.y * h2.dx - h1.x * h1.dy + h1.y * h1.dx;
+    }
+
+    double[] MatrixRowXZ(Hailstone h1, Hailstone h2)
+    {
+        return [h2.dz - h1.dz, h1.dx - h2.dx, h1.z - h2.z, h2.x - h1.x];
+    }
+
+    double MatrixRowRXZ(Hailstone h1, Hailstone h2)
+    {
+        return h2.x * h2.dz - h2.z * h2.dx - h1.x * h1.dz + h1.z * h1.dx;
     }
 
     private class Hailstone
     {
-        private long x, y, z, dx, dy, dz;
+        public long x, y, z, dx, dy, dz;
 
         public Hailstone(string line)
         {
