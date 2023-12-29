@@ -1,5 +1,6 @@
 ﻿@page "/Day25"
 @rendermode InteractiveWebAssembly
+@using QuikGraph;
 
 <PageTitle>Day 25</PageTitle>
 
@@ -28,8 +29,32 @@
     int output1 = 0;
     string puzzleInput = "";
 
+    Dictionary<string, List<string>> graph = new Dictionary<string, List<string>>();
+
     void Run()
     {
+        graph.Clear();
+        string[] lines = puzzleInput.Trim().Split('\n');
 
+        //Build adjacency list to represent the graph
+        string[] nodes;
+        foreach(string line in lines)
+        {
+            nodes = line.Replace(":", "").Split(" ");
+
+            if (!graph.ContainsKey(nodes[0]))
+                graph[nodes[0]] = new List<string>();
+
+            for (int i = 1; i < nodes.Length; i++)
+            {
+                if (!graph.ContainsKey(nodes[i]))
+                    graph[nodes[i]] = new List<string>();
+
+                graph[nodes[0]].Add(nodes[i]);
+                graph[nodes[i]].Add(nodes[0]);
+            }
+        }
+
+        output1 = graph.Count();
     }
 }
