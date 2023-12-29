@@ -1,0 +1,35 @@
+﻿@page "/Day25"
+@rendermode InteractiveWebAssembly
+
+<PageTitle>Day 25</PageTitle>
+
+@* <style>
+    body {
+        background-image: url(/media/background24.jpg);
+    }
+</style> *@
+
+<h2>Day 25</h2>
+
+<div style="display:table-cell">
+    <textarea cols="80" rows="25" @bind="puzzleInput" />
+    <div align="right"><button @onclick="Run">Run</button></div>
+</div>
+
+<hr />
+<h3>Part 1:</h3>
+<p>@output1</p>
+
+<hr />
+<h3>Notes</h3>
+
+@code
+{
+    int output1 = 0;
+    string puzzleInput = "";
+
+    void Run()
+    {
+
+    }
+}
