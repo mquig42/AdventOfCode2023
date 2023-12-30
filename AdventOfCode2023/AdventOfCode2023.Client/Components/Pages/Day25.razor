@@ -1,16 +1,17 @@
 ﻿@page "/Day25"
 @rendermode InteractiveWebAssembly
-@using QuikGraph;
 
 <PageTitle>Day 25</PageTitle>
 
-@* <style>
+<style>
     body {
-        background-image: url(/media/background24.jpg);
+        background-image: url(/media/background25.gif);
     }
-</style> *@
+</style>
 
 <h2>Day 25</h2>
+
+<marquee style="color:red">🦌🦌🦌🦌🛷 Merry Christmas and Happy New Year!</marquee>
 
 <div style="display:table-cell">
     <textarea cols="80" rows="25" @bind="puzzleInput" />
@@ -19,17 +20,23 @@
 
 <hr />
 <h3>Part 1:</h3>
+<p>@outputStr</p>
 <p>@output1</p>
 
 <hr />
 <h3>Notes</h3>
+<p>I used <a href="https://en.wikipedia.org/wiki/Karger%27s_algorithm">Karger's algorithm</a> to find the minimum cut of the graph. It's based on randomness, so doesn't always find the correct answer. Just keep clicking Run until you get a solution that cuts three edges.</p>
 
+<script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.5.0"></script>
+<midi-player src="/media/here_comes_santa_clause.mid" autoplay>
+</midi-player>
 @code
 {
     int output1 = 0;
     string puzzleInput = "";
+    string outputStr = "";
 
-    Dictionary<string, List<string>> graph = new Dictionary<string, List<string>>();
+    Dictionary<string, GraphNode> graph = new Dictionary<string, GraphNode>();
 
     void Run()
     {
@@ -43,18 +50,83 @@
             nodes = line.Replace(":", "").Split(" ");
 
             if (!graph.ContainsKey(nodes[0]))
-                graph[nodes[0]] = new List<string>();
+                graph[nodes[0]] = new GraphNode(nodes[0]);
 
             for (int i = 1; i < nodes.Length; i++)
             {
                 if (!graph.ContainsKey(nodes[i]))
-                    graph[nodes[i]] = new List<string>();
+                    graph[nodes[i]] = new GraphNode(nodes[i]);
 
-                graph[nodes[0]].Add(nodes[i]);
-                graph[nodes[i]].Add(nodes[0]);
+                graph[nodes[0]].Edges.Add(nodes[i]);
+                graph[nodes[i]].Edges.Add(nodes[0]);
             }
         }
 
-        output1 = graph.Count();
+        Karger();
+
+        int product = 1;
+        foreach(string node in graph.Keys)
+        {
+            product *= graph[node].MergedNodes;
+        }
+
+        outputStr = string.Format("Cut {0} Edges. Divided into sizes {1} and {2}", graph.First().Value.Edges.Count, graph.First().Value.MergedNodes, graph.Last().Value.MergedNodes);
+        output1 = product;
+    }
+
+    void Karger()
+    {
+        string a, b;
+        Random rand = new Random();
+        int i = 0;
+
+        while(graph.Count>2)
+        {
+            a = graph.ElementAt(rand.Next(0, graph.Count)).Key;
+            b = a;
+            while (b == a)
+            {
+                b = graph[a].Edges[rand.Next(0, graph[a].Edges.Count)];
+            }
+
+            graph["new" + i] = new GraphNode("new" + i);
+            graph["new" + i].MergedNodes = graph[a].MergedNodes + graph[b].MergedNodes;
+
+            foreach(string edge in graph[a].Edges)
+            {
+                graph["new" + i].Edges.Add(edge);
+                graph[edge].Edges.Remove(a);
+                graph[edge].Edges.Remove(b);
+                graph[edge].Edges.Add("new" + i);
+            }
+            foreach (string edge in graph[b].Edges)
+            {
+                graph["new" + i].Edges.Add(edge);
+                graph[edge].Edges.Remove(a);
+                graph[edge].Edges.Remove(b);
+                graph[edge].Edges.Add("new" + i);
+            }
+            graph["new" + i].Edges.RemoveAll(x => x == "new" + i);
+            graph["new" + i].Edges.RemoveAll(x => x == a);
+            graph["new" + i].Edges.RemoveAll(x => x == b);
+
+            graph.Remove(a);
+            graph.Remove(b);
+            i++;
+        }
+    }
+
+    private class GraphNode
+    {
+        public string Name;
+        public int MergedNodes;
+        public List<string> Edges;
+
+        public GraphNode(string name)
+        {
+            this.Name = name;
+            MergedNodes = 1;
+            Edges = new List<string>();
+        }
     }
 }
