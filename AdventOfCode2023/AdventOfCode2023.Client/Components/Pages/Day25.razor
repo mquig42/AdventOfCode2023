@@ -19,6 +19,7 @@
 
 <hr />
 <h3>Part 1:</h3>
+<p>@outputStr</p>
 <p>@output1</p>
 
 <hr />
@@ -28,33 +29,46 @@
 {
     int output1 = 0;
     string puzzleInput = "";
+    string outputStr = "";
 
-    Dictionary<string, List<string>> graph = new Dictionary<string, List<string>>();
+    UndirectedGraph<string, TaggedUndirectedEdge<string, double>> graph = new UndirectedGraph<string, TaggedUndirectedEdge<string, double>>();
 
     void Run()
     {
         graph.Clear();
         string[] lines = puzzleInput.Trim().Split('\n');
 
-        //Build adjacency list to represent the graph
         string[] nodes;
-        foreach(string line in lines)
+        string minNode, maxNode;
+        foreach (string line in lines)
         {
             nodes = line.Replace(":", "").Split(" ");
-
-            if (!graph.ContainsKey(nodes[0]))
-                graph[nodes[0]] = new List<string>();
-
+            if (!graph.ContainsVertex(nodes[0]))
+                graph.AddVertex(nodes[0]);
             for (int i = 1; i < nodes.Length; i++)
             {
-                if (!graph.ContainsKey(nodes[i]))
-                    graph[nodes[i]] = new List<string>();
+                if (!graph.ContainsVertex(nodes[i]))
+                    graph.AddVertex(nodes[i]);
+                if(nodes[0].CompareTo(nodes[i])<0)
+                {
+                    minNode = nodes[0];
+                    maxNode = nodes[i];
+                }
+                else
+                {
+                    minNode = nodes[i];
+                    maxNode = nodes[0];
+                }
 
-                graph[nodes[0]].Add(nodes[i]);
-                graph[nodes[i]].Add(nodes[0]);
+                graph.AddEdge(new TaggedUndirectedEdge<string, double>(minNode, maxNode, 1));
             }
         }
 
-        output1 = graph.Count();
+        QuikGraph.Algorithms.GraphPartition.KernighanLinAlgorithm<string, TaggedUndirectedEdge<string, double>> linAlgorithm = new QuikGraph.Algorithms.GraphPartition.KernighanLinAlgorithm<string, TaggedUndirectedEdge<string, double>>(graph, 1);
+        linAlgorithm.Compute();
+
+        outputStr = string.Format("Cut cost {0}. Partition sizes are {1} and {2}", linAlgorithm.Partition.CutCost, linAlgorithm.Partition.VertexSetA.Count, linAlgorithm.Partition.VertexSetB.Count);
+
+        output1 = linAlgorithm.Partition.VertexSetA.Count * linAlgorithm.Partition.VertexSetB.Count;
     }
 }
